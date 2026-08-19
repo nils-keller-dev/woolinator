@@ -7,11 +7,11 @@ export default function Index() {
 
   return (
     <View
-      className="flex-1 items-center bg-background"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      className="flex-1 gap-8 items-center bg-background px-3"
+      style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
     >
-      <Counter initialValue={0} min={0} max={999} />
-      <Counter initialValue={0} min={0} max={999} />
+      <Counter title="Überschrift 1" initialValue={0} min={0} max={999} />
+      <Counter title="Überschrift 2" initialValue={0} min={0} max={999} />
     </View>
   )
 }
