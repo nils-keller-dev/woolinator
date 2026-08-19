@@ -1,10 +1,10 @@
-import { Stack } from 'expo-router';
-import { useCSSVariable } from 'uniwind';
-import '../../global.css';
+import { Stack } from 'expo-router'
+import { useCSSVariable } from 'uniwind'
+import '../../global.css'
 
 export default function RootLayout() {
-  const background = useCSSVariable('--color-background');
-  const foreground = useCSSVariable('--color-foreground');
+  const background = useCSSVariable('--color-background')
+  const foreground = useCSSVariable('--color-foreground')
 
   return (
     <Stack
@@ -13,5 +13,5 @@ export default function RootLayout() {
         headerTintColor: foreground as string,
       }}
     />
-  );
+  )
 }
