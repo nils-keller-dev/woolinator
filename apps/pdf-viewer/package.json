@@ -1,0 +1,22 @@
+{
+  "name": "pdf-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "pdfjs-dist": "3.11.174",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "~6.0.3",
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.0.3"
+  }
+}
