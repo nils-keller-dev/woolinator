@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
-import { View } from 'react-native'
+import { TextInput, View } from 'react-native'
 import { useCSSVariable } from 'uniwind'
 import { CounterButton } from './counterButton'
 
@@ -11,22 +11,26 @@ interface CounterProps {
   min?: number
   max?: number
   title: string
-  onChange?: (value: number) => void
 }
 
 export function Counter({
   initialValue = 0,
-  min,
-  max,
+  min = 0,
+  max = 999,
   title,
-  onChange,
 }: CounterProps) {
-  const [count, setCount] = useState(initialValue)
+  const [inputValue, setInputValue] = useState(String(initialValue))
   const foreground = useCSSVariable('--color-foreground') as string
+  const count = parseInt(inputValue, 10) || 0
 
-  const update = (next: number) => {
-    setCount(next)
-    onChange?.(next)
+  const update = (next: number) => setInputValue(String(next))
+
+  const handleInputChange = (text: string) => {
+    setInputValue(text.replace(/\D/g, ''))
+  }
+
+  const handleInputBlur = () => {
+    setInputValue(String(count))
   }
 
   return (
@@ -44,9 +48,15 @@ export function Counter({
         >
           <Ionicons name="remove" size={28} color={foreground} />
         </CounterButton>
-        <Text className="text-foreground text-center text-[80px] leading-15 tabular-nums">
-          {count}
-        </Text>
+        <TextInput
+          className="text-foreground absolute left-1/2 flex-1 -translate-x-1/2 text-center text-[80px] tabular-nums"
+          value={inputValue}
+          onChangeText={handleInputChange}
+          onBlur={handleInputBlur}
+          keyboardType="number-pad"
+          maxLength={String(max).length}
+          selectTextOnFocus
+        />
         <CounterButton
           onPress={() => update(count + 1)}
           disabled={max !== undefined && count >= max}

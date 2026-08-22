@@ -11,8 +11,8 @@ export default function Index() {
       style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
     >
       <View className="flex w-full gap-5">
-        <Counter title="Reihen / Runden" initialValue={0} min={0} max={999} />
-        <Counter title="Maschen" initialValue={0} min={0} max={999} />
+        <Counter title="Reihen / Runden" />
+        <Counter title="Maschen" />
       </View>
       <View className="w-full flex-1 rounded-xl bg-white"></View>
     </View>
