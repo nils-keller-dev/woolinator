@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
 import { useState } from 'react'
 import { TextInput, View } from 'react-native'
 import { useCSSVariable } from 'uniwind'
@@ -46,7 +46,12 @@ export function Counter({
           onPress={() => update(count - 1)}
           disabled={min !== undefined && count <= min}
         >
-          <FontAwesome6 name="minus" size={28} color={foreground} />
+          <FontAwesome6
+            iconStyle="solid"
+            name="minus"
+            size={28}
+            color={foreground}
+          />
         </CounterButton>
         <TextInput
           className="text-foreground absolute left-1/2 flex-1 -translate-x-1/2 text-center text-[80px] tabular-nums"
@@ -61,7 +66,12 @@ export function Counter({
           onPress={() => update(count + 1)}
           disabled={max !== undefined && count >= max}
         >
-          <FontAwesome6 name="plus" size={28} color={foreground} />
+          <FontAwesome6
+            iconStyle="solid"
+            name="plus"
+            size={28}
+            color={foreground}
+          />
         </CounterButton>
       </View>
     </View>

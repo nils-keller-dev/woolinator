@@ -1,6 +1,6 @@
 import { Counter } from '@/components/ui/counter'
 import { PdfViewer } from '@/components/ui/pdfViewer'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
 import * as DocumentPicker from 'expo-document-picker'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
@@ -34,10 +34,15 @@ export default function Index() {
           <PdfViewer uri={pdfUri} />
         ) : (
           <Pressable
-            className="flex size-full items-center justify-center"
+            className="flex size-full items-center justify-center gap-1"
             onPress={pickPdf}
           >
-            <FontAwesome6 name="file-import" size={24} color="#444" />
+            <FontAwesome6
+              iconStyle="solid"
+              name="file-import"
+              size={24}
+              color="#444"
+            />
             <Text className="text-[#444]">PDF öffnen</Text>
           </Pressable>
         )}
