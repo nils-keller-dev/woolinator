@@ -4,12 +4,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { useCSSVariable } from 'uniwind'
+import { CounterButton } from './counterButton'
 
 interface CounterProps {
   initialValue?: number
   min?: number
   max?: number
-  title?: string
+  title: string
   onChange?: (value: number) => void
 }
 
@@ -29,43 +30,29 @@ export function Counter({
   }
 
   return (
-    <View className="w-full gap-2">
-      {title && (
-        <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-foreground">{title}</Text>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => update(initialValue)}
-          >
-            <Text>Reset</Text>
-          </Button>
-        </View>
-      )}
-      <View className="flex-row items-center justify-center gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-full scale-200"
+    <View className="w-full gap-2.5">
+      <View className="w-full flex-row items-center justify-between">
+        <Text className="text-foreground text-xl">{title}</Text>
+        <Button onPress={() => update(initialValue)}>
+          <Text>reset</Text>
+        </Button>
+      </View>
+      <View className="flex-row items-center justify-between gap-3">
+        <CounterButton
           onPress={() => update(count - 1)}
           disabled={min !== undefined && count <= min}
         >
-          <Ionicons name="remove" size={18} color={foreground} />
-        </Button>
-
-        <Text className="w-56 text-center text-9xl font-semibold tabular-nums text-foreground">
+          <Ionicons name="remove" size={28} color={foreground} />
+        </CounterButton>
+        <Text className="text-foreground text-center text-[80px] leading-15 tabular-nums">
           {count}
         </Text>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-full scale-200"
+        <CounterButton
           onPress={() => update(count + 1)}
           disabled={max !== undefined && count >= max}
         >
-          <Ionicons name="add" size={18} color={foreground} />
-        </Button>
+          <Ionicons name="add" size={28} color={foreground} />
+        </CounterButton>
       </View>
     </View>
   )

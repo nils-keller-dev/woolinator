@@ -7,11 +7,14 @@ export default function Index() {
 
   return (
     <View
-      className="flex-1 gap-8 items-center bg-background px-3"
+      className="bg-background flex h-full flex-1 items-center gap-6 px-3"
       style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
     >
-      <Counter title="Überschrift 1" initialValue={0} min={0} max={999} />
-      <Counter title="Überschrift 2" initialValue={0} min={0} max={999} />
+      <View className="flex w-full gap-5">
+        <Counter title="Reihen / Runden" initialValue={0} min={0} max={999} />
+        <Counter title="Maschen" initialValue={0} min={0} max={999} />
+      </View>
+      <View className="w-full flex-1 rounded-xl bg-white"></View>
     </View>
   )
 }
