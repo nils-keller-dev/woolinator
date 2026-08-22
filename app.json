@@ -1,7 +1,10 @@
 {
   "expo": {
-    "name": "woolinator",
+    "name": "Woolinator",
     "slug": "woolinator",
+    "locales": {
+      "de": "./locales/de.json"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
