@@ -1,14 +1,18 @@
 import { Counter } from '@/components/ui/counter'
+import { PdfControls } from '@/components/ui/pdfControls'
+import type { DrawMode, PdfViewerHandle } from '@/components/ui/pdfViewer'
 import { PdfViewer } from '@/components/ui/pdfViewer'
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
 import * as DocumentPicker from 'expo-document-picker'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function Index() {
   const insets = useSafeAreaInsets()
   const [pdfUri, setPdfUri] = useState<string | null>(null)
+  const [mode, setMode] = useState<DrawMode>('scroll')
+  const pdfRef = useRef<PdfViewerHandle>(null)
 
   async function pickPdf() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -31,7 +35,14 @@ export default function Index() {
       </View>
       <View className="w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
         {pdfUri ? (
-          <PdfViewer uri={pdfUri} />
+          <>
+            <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode} />
+            <PdfControls
+              mode={mode}
+              setMode={setMode}
+              pdfRef={pdfRef.current}
+            />
+          </>
         ) : (
           <Pressable
             className="flex size-full items-center justify-center gap-1"

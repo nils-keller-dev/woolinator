@@ -42,6 +42,11 @@ yarn-error.*
 # Android
 android/local.properties
 
+# pdf-viewer sub-app build artifacts
+apps/pdf-viewer/node_modules/
+apps/pdf-viewer/dist/*.js
+apps/pdf-viewer/dist/*.html
+
 example
 
 # generated native folders
