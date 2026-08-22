@@ -39,6 +39,9 @@ yarn-error.*
 # IDE
 .idea/
 
+# Android
+android/local.properties
+
 example
 
 # generated native folders
