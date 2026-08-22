@@ -34,7 +34,7 @@ export function Counter({
       <View className="w-full flex-row items-center justify-between">
         <Text className="text-foreground text-xl">{title}</Text>
         <Button onPress={() => update(initialValue)}>
-          <Text>reset</Text>
+          <Text>Reset</Text>
         </Button>
       </View>
       <View className="flex-row items-center justify-between gap-3">
