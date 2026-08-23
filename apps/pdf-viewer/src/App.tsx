@@ -2,12 +2,11 @@ import type { PageViewport, PDFPageProxy } from 'pdfjs-dist'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Message, DrawMode as Mode } from './types'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
   new Blob([workerCode], { type: 'application/javascript' }),
 )
-
-type Mode = 'scroll' | 'pen' | 'highlight'
 
 interface Stroke {
   isHighlight: boolean
@@ -101,6 +100,11 @@ export default function App() {
   }, [])
 
   const loadPdf = useCallback(async (base64: string) => {
+    annotationsRef.current = {}
+    drawContextsRef.current = {}
+    setPages([])
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -127,9 +131,9 @@ export default function App() {
   useEffect(() => {
     function handleMsg(e: MessageEvent) {
       try {
-        const msg = JSON.parse(e.data as string)
-        if (msg.type === 'loadPdf') loadPdf(msg.base64)
-        else if (msg.type === 'setMode') setMode(msg.mode as Mode)
+        const msg = JSON.parse(e.data as string) as Message
+        if (msg.type === 'loadPdf') loadPdf(msg.data)
+        else if (msg.type === 'setMode') setMode(msg.data as Mode)
         else if (msg.type === 'undo') undo()
       } catch (_) {}
     }
@@ -236,9 +240,9 @@ function PdfPageView({
       lastX = (t.clientX - r.left) * (drawCanvas.width / r.width)
       lastY = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
-        isHighlight: modeRef.current === 'highlight',
+        isHighlight: modeRef.current === 'highlighter',
         color: '#1a1a1a',
-        width: modeRef.current === 'highlight' ? 16 : 3,
+        width: modeRef.current === 'highlighter' ? 16 : 3,
         points: [{ x: lastX, y: lastY }],
         time: Date.now(),
       }

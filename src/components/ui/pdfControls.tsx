@@ -1,9 +1,7 @@
-import FontAwesome6, {
-  FontAwesome6SolidIconName,
-} from '@react-native-vector-icons/fontawesome6/static'
-import { Pressable, View } from 'react-native'
-import { useCSSVariable } from 'uniwind'
-import { DrawMode, PdfViewerHandle } from './pdfViewer'
+import { View } from 'react-native'
+import { DrawMode } from '../../../apps/pdf-viewer/dist/types'
+import { ControlButton } from './controlButton'
+import { PdfViewerHandle } from './pdfViewer'
 
 interface PdfControlsProps {
   mode: DrawMode
@@ -11,38 +9,12 @@ interface PdfControlsProps {
   pdfRef: PdfViewerHandle | null
 }
 
-interface ControlButtonProps {
-  iconName: FontAwesome6SolidIconName
-  onPress: () => void
-  isActive: boolean
-}
-
-function ControlButton({ iconName, onPress, isActive }: ControlButtonProps) {
-  const [foreground, background] = useCSSVariable([
-    '--color-foreground',
-    '--color-background',
-  ])
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`size-13 items-center justify-center rounded-full p-2 ${isActive ? 'bg-foreground' : ''}`}
-    >
-      <FontAwesome6
-        iconStyle="solid"
-        name={iconName}
-        size={20}
-        color={isActive ? String(background) : String(foreground)}
-      />
-    </Pressable>
-  )
-}
-
 function PdfControls({ setMode, pdfRef, mode }: PdfControlsProps) {
   const modeIconMap = [
     { mode: 'scroll', icon: 'arrows-up-down-left-right' },
     { mode: 'pen', icon: 'pen' },
-    { mode: 'highlight', icon: 'highlighter' },
+    { mode: 'highlighter', icon: 'highlighter' },
+    { mode: 'eraser', icon: 'eraser' },
   ] as const
 
   return (
@@ -58,6 +30,11 @@ function PdfControls({ setMode, pdfRef, mode }: PdfControlsProps) {
       <ControlButton
         isActive={false}
         iconName="arrow-rotate-left"
+        onPress={() => pdfRef?.undo()}
+      />
+      <ControlButton
+        isActive={false}
+        iconName="arrow-rotate-right"
         onPress={() => pdfRef?.undo()}
       />
     </View>

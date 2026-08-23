@@ -1,12 +1,14 @@
+import { ControlButton } from '@/components/ui/controlButton'
 import { Counter } from '@/components/ui/counter'
 import { PdfControls } from '@/components/ui/pdfControls'
-import type { DrawMode, PdfViewerHandle } from '@/components/ui/pdfViewer'
+import type { PdfViewerHandle } from '@/components/ui/pdfViewer'
 import { PdfViewer } from '@/components/ui/pdfViewer'
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
 import * as DocumentPicker from 'expo-document-picker'
 import { useRef, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { DrawMode } from '../../apps/pdf-viewer/dist/types'
 
 export default function Index() {
   const insets = useSafeAreaInsets()
@@ -33,10 +35,15 @@ export default function Index() {
         <Counter title="Reihen / Runden" />
         <Counter title="Maschen" />
       </View>
-      <View className="w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
+      <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
         {pdfUri ? (
           <>
             <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode} />
+            <ControlButton
+              iconName="file-import"
+              onPress={pickPdf}
+              className="absolute top-2 right-2"
+            />
             <PdfControls
               mode={mode}
               setMode={setMode}
