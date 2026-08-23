@@ -10,7 +10,6 @@ GlobalWorkerOptions.workerSrc = URL.createObjectURL(
 
 interface Stroke {
   isHighlight: boolean
-  color: string
   width: number
   points: { x: number; y: number }[]
   time: number
@@ -31,6 +30,8 @@ declare global {
 
 const DPR = window.devicePixelRatio || 1
 const RESOLUTION = 2
+const PEN_COLOR = '#1c6607'
+const HIGHLIGHT_COLOR = '#FFD700'
 
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
@@ -50,11 +51,11 @@ export default function App() {
       if (s.isHighlight) {
         ctx.globalAlpha = 0.45
         ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = '#FFD700'
+        ctx.strokeStyle = HIGHLIGHT_COLOR
       } else {
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = s.color
+        ctx.strokeStyle = PEN_COLOR
       }
       ctx.beginPath()
       ctx.moveTo(s.points[0].x, s.points[0].y)
@@ -210,7 +211,6 @@ function PdfPageView({
   annotationsRef,
   drawContextsRef,
   currentStrokeRef,
-  renderStroke,
 }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -241,7 +241,6 @@ function PdfPageView({
       lastY = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
         isHighlight: modeRef.current === 'highlighter',
-        color: '#1a1a1a',
         width: modeRef.current === 'highlighter' ? 16 : 3,
         points: [{ x: lastX, y: lastY }],
         time: Date.now(),
@@ -265,11 +264,11 @@ function PdfPageView({
       if (stroke.isHighlight) {
         ctx.globalAlpha = 0.45
         ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = '#FFD700'
+        ctx.strokeStyle = HIGHLIGHT_COLOR
       } else {
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = '#1a1a1a'
+        ctx.strokeStyle = PEN_COLOR
       }
       ctx.beginPath()
       ctx.moveTo(lastX, lastY)
