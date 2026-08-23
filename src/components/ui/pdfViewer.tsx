@@ -1,3 +1,5 @@
+import HTML from '@woolinator/pdf-viewer'
+import type { DrawMode, Message } from '@woolinator/pdf-viewer/types'
 import {
   forwardRef,
   useEffect,
@@ -8,8 +10,6 @@ import {
 import RNBlobUtil from 'react-native-blob-util'
 import type { WebViewMessageEvent } from 'react-native-webview'
 import WebView from 'react-native-webview'
-import type { DrawMode, Message } from '../../../apps/pdf-viewer/dist/types'
-import HTML from '../../../apps/pdf-viewer/dist/viewerHtml'
 
 export type PdfViewerHandle = {
   undo: () => void

@@ -1,7 +1,12 @@
 {
-  "name": "pdf-viewer",
+  "name": "@woolinator/pdf-viewer",
   "private": true,
   "type": "module",
+  "main": "./dist/viewerHtml.ts",
+  "exports": {
+    ".": "./dist/viewerHtml.ts",
+    "./types": "./dist/types.ts"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite"

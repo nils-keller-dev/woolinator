@@ -4,7 +4,9 @@
     "strict": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@/assets/*": ["./assets/*"]
+      "@/assets/*": ["./assets/*"],
+      "@woolinator/pdf-viewer": ["./apps/pdf-viewer/dist/viewerHtml.ts"],
+      "@woolinator/pdf-viewer/types": ["./apps/pdf-viewer/dist/types.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
