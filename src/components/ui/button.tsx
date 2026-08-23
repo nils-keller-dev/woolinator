@@ -6,7 +6,7 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
 
 function Button({ ...props }: ButtonProps) {
   return (
-    <TextClassContext.Provider value="text-foreground text-sm ">
+    <TextClassContext.Provider value="text-foreground text-sm">
       <Pressable role="button" {...props} />
     </TextClassContext.Provider>
   )
