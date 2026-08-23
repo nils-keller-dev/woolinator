@@ -23,7 +23,7 @@ export default defineConfig({
   plugins: [react(), viteSingleFile(), emitTsModule()],
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
+    emptyOutDir: false,
     target: 'es2020',
   },
   optimizeDeps: {
