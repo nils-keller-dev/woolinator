@@ -13,6 +13,8 @@ function emitTsModule() {
         resolve(__dirname, 'dist/viewerHtml.ts'),
         `export default ${JSON.stringify(html)}`,
       )
+      const types = readFileSync(resolve(__dirname, 'src/types.ts'), 'utf-8')
+      writeFileSync(resolve(__dirname, 'dist/types.ts'), types)
     },
   }
 }
