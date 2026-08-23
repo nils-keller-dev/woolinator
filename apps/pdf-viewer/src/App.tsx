@@ -29,7 +29,7 @@ declare global {
 }
 
 const DPR = window.devicePixelRatio || 1
-const RESOLUTION = 2
+const RESOLUTION = 3
 const PEN_COLOR = '#1c6607'
 const HIGHLIGHT_COLOR = '#FFD700'
 
