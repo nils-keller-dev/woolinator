@@ -22,6 +22,8 @@ interface PageInfo {
   cssH: number
 }
 
+type Action = { type: 'draw' | 'erase'; page: number; stroke: Stroke }
+
 declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (msg: string) => void }
@@ -30,8 +32,20 @@ declare global {
 
 const DPR = window.devicePixelRatio || 1
 const RESOLUTION = 3
-const PEN_COLOR = '#1c6607'
-const HIGHLIGHT_COLOR = '#FFD700'
+
+const PENS = {
+  pen: {
+    color: '#1c6607',
+    width: 3,
+  },
+  highlighter: {
+    color: '#FFD700',
+    width: 10,
+  },
+  eraser: {
+    width: 5,
+  },
+}
 
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
@@ -40,6 +54,8 @@ export default function App() {
   const annotationsRef = useRef<Record<number, Stroke[]>>({})
   const drawContextsRef = useRef<Record<number, CanvasRenderingContext2D>>({})
   const currentStrokeRef = useRef<Stroke | null>(null)
+  const historyRef = useRef<Action[]>([])
+  const redoStackRef = useRef<Action[]>([])
 
   const renderStroke = useCallback(
     (ctx: CanvasRenderingContext2D, s: Stroke) => {
@@ -51,11 +67,11 @@ export default function App() {
       if (s.isHighlight) {
         ctx.globalAlpha = 0.45
         ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = HIGHLIGHT_COLOR
+        ctx.strokeStyle = PENS.highlighter.color
       } else {
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = PEN_COLOR
+        ctx.strokeStyle = PENS.pen.color
       }
       ctx.beginPath()
       ctx.moveTo(s.points[0].x, s.points[0].y)
@@ -77,18 +93,31 @@ export default function App() {
   )
 
   const undo = useCallback(() => {
-    let lastPage: number | null = null
-    let lastTime = -1
-    Object.entries(annotationsRef.current).forEach(([p, arr]) => {
-      if (arr.length && arr[arr.length - 1].time > lastTime) {
-        lastTime = arr[arr.length - 1].time
-        lastPage = Number(p)
-      }
-    })
-    if (lastPage !== null) {
-      annotationsRef.current[lastPage].pop()
-      redrawPage(lastPage)
+    const action = historyRef.current.pop()
+    if (!action) return
+    if (action.type === 'draw') {
+      const strokes = annotationsRef.current[action.page]
+      const idx = strokes.findIndex((s) => s === action.stroke)
+      if (idx !== -1) strokes.splice(idx, 1)
+    } else {
+      annotationsRef.current[action.page].push(action.stroke)
     }
+    redoStackRef.current.push(action)
+    redrawPage(action.page)
+  }, [redrawPage])
+
+  const redo = useCallback(() => {
+    const action = redoStackRef.current.pop()
+    if (!action) return
+    if (action.type === 'draw') {
+      annotationsRef.current[action.page].push(action.stroke)
+    } else {
+      const strokes = annotationsRef.current[action.page]
+      const idx = strokes.findIndex((s) => s === action.stroke)
+      if (idx !== -1) strokes.splice(idx, 1)
+    }
+    historyRef.current.push(action)
+    redrawPage(action.page)
   }, [redrawPage])
 
   const setMode = useCallback((m: Mode) => {
@@ -103,6 +132,8 @@ export default function App() {
   const loadPdf = useCallback(async (base64: string) => {
     annotationsRef.current = {}
     drawContextsRef.current = {}
+    historyRef.current = []
+    redoStackRef.current = []
     setPages([])
     if (scrollRef.current) scrollRef.current.scrollTop = 0
 
@@ -136,6 +167,7 @@ export default function App() {
         if (msg.type === 'loadPdf') loadPdf(msg.data)
         else if (msg.type === 'setMode') setMode(msg.data as Mode)
         else if (msg.type === 'undo') undo()
+        else if (msg.type === 'redo') redo()
       } catch (_) {}
     }
 
@@ -147,7 +179,7 @@ export default function App() {
       document.removeEventListener('message', handleMsg as EventListener)
       window.removeEventListener('message', handleMsg)
     }
-  }, [loadPdf, setMode, undo])
+  }, [loadPdf, setMode, undo, redo])
 
   return (
     <div
@@ -184,6 +216,8 @@ export default function App() {
             annotationsRef={annotationsRef}
             drawContextsRef={drawContextsRef}
             currentStrokeRef={currentStrokeRef}
+            redoStackRef={redoStackRef}
+            historyRef={historyRef}
             renderStroke={renderStroke}
           />
         ))}
@@ -201,6 +235,8 @@ interface PdfPageProps {
     Record<number, CanvasRenderingContext2D>
   >
   currentStrokeRef: React.MutableRefObject<Stroke | null>
+  historyRef: React.MutableRefObject<Action[]>
+  redoStackRef: React.MutableRefObject<Action[]>
   renderStroke: (ctx: CanvasRenderingContext2D, s: Stroke) => void
 }
 
@@ -211,6 +247,9 @@ function PdfPageView({
   annotationsRef,
   drawContextsRef,
   currentStrokeRef,
+  redoStackRef,
+  historyRef,
+  renderStroke,
 }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -232,22 +271,55 @@ function PdfPageView({
     let lastX = 0
     let lastY = 0
 
+    function eraseAt(touch: Touch) {
+      const r = drawCanvas.getBoundingClientRect()
+      const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
+      const y = (touch.clientY - r.top) * (drawCanvas.height / r.height)
+      const strokes = annotationsRef.current[pageIndex]
+      const idx = strokes.findIndex((s) =>
+        s.points.some(
+          (p) =>
+            Math.hypot(p.x - x, p.y - y) < PENS.eraser.width * DPR * RESOLUTION,
+        ),
+      )
+      if (idx === -1) return
+      const [erased] = strokes.splice(idx, 1)
+      historyRef.current.push({
+        type: 'erase',
+        page: pageIndex,
+        stroke: erased,
+      })
+      redoStackRef.current = []
+      const ctx = drawContextsRef.current[pageIndex]
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+      strokes.forEach((s) => renderStroke(ctx, s))
+    }
+
     function onTouchStart(e: TouchEvent) {
       if (modeRef.current === 'scroll') return
       e.preventDefault()
+      if (modeRef.current === 'eraser') {
+        eraseAt(e.touches[0])
+        return
+      }
       const t = e.touches[0]
       const r = drawCanvas.getBoundingClientRect()
       lastX = (t.clientX - r.left) * (drawCanvas.width / r.width)
       lastY = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
         isHighlight: modeRef.current === 'highlighter',
-        width: modeRef.current === 'highlighter' ? 16 : 3,
+        width: PENS[modeRef.current].width,
         points: [{ x: lastX, y: lastY }],
         time: Date.now(),
       }
     }
 
     function onTouchMove(e: TouchEvent) {
+      if (modeRef.current === 'eraser') {
+        e.preventDefault()
+        eraseAt(e.touches[0])
+        return
+      }
       const stroke = currentStrokeRef.current
       if (!stroke || modeRef.current === 'scroll') return
       e.preventDefault()
@@ -264,11 +336,11 @@ function PdfPageView({
       if (stroke.isHighlight) {
         ctx.globalAlpha = 0.45
         ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = HIGHLIGHT_COLOR
+        ctx.strokeStyle = PENS.highlighter.color
       } else {
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = PEN_COLOR
+        ctx.strokeStyle = PENS.pen.color
       }
       ctx.beginPath()
       ctx.moveTo(lastX, lastY)
@@ -283,6 +355,8 @@ function PdfPageView({
       const stroke = currentStrokeRef.current
       if (!stroke) return
       annotationsRef.current[pageIndex].push(stroke)
+      historyRef.current.push({ type: 'draw', page: pageIndex, stroke })
+      redoStackRef.current = []
       currentStrokeRef.current = null
     }
 
@@ -295,7 +369,6 @@ function PdfPageView({
       drawCanvas.removeEventListener('touchmove', onTouchMove)
       drawCanvas.removeEventListener('touchend', onTouchEnd)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

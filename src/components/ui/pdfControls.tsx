@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
+import type { DrawMode } from '@woolinator/pdf-viewer/types'
 import { View } from 'react-native'
-import { DrawMode } from '../../../apps/pdf-viewer/dist/types'
 import { ControlButton } from './controlButton'
 import { PdfViewerHandle } from './pdfViewer'
 
@@ -45,7 +45,7 @@ function PdfControls({
       <ControlButton
         isActive={false}
         iconName="arrow-rotate-right"
-        onPress={() => pdfRef?.undo()}
+        onPress={() => pdfRef?.redo()}
       />
     </View>
   )
