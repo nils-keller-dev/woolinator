@@ -36,11 +36,11 @@ const RESOLUTION = 3
 const PENS = {
   pen: {
     color: '#1c6607',
-    width: 3,
+    width: 2,
   },
   highlighter: {
     color: '#FFD700',
-    width: 10,
+    width: 8,
   },
   eraser: {
     width: 5,
@@ -56,41 +56,55 @@ export default function App() {
   const currentStrokeRef = useRef<Stroke | null>(null)
   const historyRef = useRef<Action[]>([])
   const redoStackRef = useRef<Action[]>([])
+  const highlightCanvasesRef = useRef<Record<number, HTMLCanvasElement>>({})
 
-  const renderStroke = useCallback(
-    (ctx: CanvasRenderingContext2D, s: Stroke) => {
-      if (s.points.length < 2) return
+  const redrawPage = useCallback((p: number) => {
+    const ctx = drawContextsRef.current[p]
+    if (!ctx) return
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    const strokes = annotationsRef.current[p] ?? []
+
+    const hCanvas = highlightCanvasesRef.current[p]
+    if (hCanvas) {
+      const hCtx = hCanvas.getContext('2d')!
+      hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height)
+      const highlights = strokes.filter(
+        (s) => s.isHighlight && s.points.length >= 2,
+      )
+      if (highlights.length) {
+        hCtx.lineCap = 'round'
+        hCtx.lineJoin = 'round'
+        hCtx.lineWidth = PENS.highlighter.width * DPR * RESOLUTION
+        hCtx.strokeStyle = PENS.highlighter.color
+        hCtx.beginPath()
+        highlights.forEach((s) => {
+          hCtx.moveTo(s.points[0].x, s.points[0].y)
+          s.points.slice(1).forEach((pt) => hCtx.lineTo(pt.x, pt.y))
+        })
+        hCtx.stroke()
+        ctx.save()
+        ctx.globalAlpha = 0.45
+        ctx.drawImage(hCanvas, 0, 0)
+        ctx.restore()
+      }
+    }
+
+    const pens = strokes.filter((s) => !s.isHighlight && s.points.length >= 2)
+    if (pens.length) {
       ctx.save()
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      ctx.lineWidth = s.width * DPR * RESOLUTION
-      if (s.isHighlight) {
-        ctx.globalAlpha = 0.45
-        ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = PENS.highlighter.color
-      } else {
-        ctx.globalAlpha = 1
-        ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = PENS.pen.color
-      }
+      ctx.lineWidth = PENS.pen.width * DPR * RESOLUTION
+      ctx.strokeStyle = PENS.pen.color
       ctx.beginPath()
-      ctx.moveTo(s.points[0].x, s.points[0].y)
-      s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
+      pens.forEach((s) => {
+        ctx.moveTo(s.points[0].x, s.points[0].y)
+        s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
+      })
       ctx.stroke()
       ctx.restore()
-    },
-    [],
-  )
-
-  const redrawPage = useCallback(
-    (p: number) => {
-      const ctx = drawContextsRef.current[p]
-      if (!ctx) return
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-      ;(annotationsRef.current[p] ?? []).forEach((s) => renderStroke(ctx, s))
-    },
-    [renderStroke],
-  )
+    }
+  }, [])
 
   const undo = useCallback(() => {
     const action = historyRef.current.pop()
@@ -132,6 +146,7 @@ export default function App() {
   const loadPdf = useCallback(async (base64: string) => {
     annotationsRef.current = {}
     drawContextsRef.current = {}
+    highlightCanvasesRef.current = {}
     historyRef.current = []
     redoStackRef.current = []
     setPages([])
@@ -218,7 +233,8 @@ export default function App() {
             currentStrokeRef={currentStrokeRef}
             redoStackRef={redoStackRef}
             historyRef={historyRef}
-            renderStroke={renderStroke}
+            highlightCanvasesRef={highlightCanvasesRef}
+            redrawPage={redrawPage}
           />
         ))}
       </div>
@@ -237,7 +253,10 @@ interface PdfPageProps {
   currentStrokeRef: React.MutableRefObject<Stroke | null>
   historyRef: React.MutableRefObject<Action[]>
   redoStackRef: React.MutableRefObject<Action[]>
-  renderStroke: (ctx: CanvasRenderingContext2D, s: Stroke) => void
+  highlightCanvasesRef: React.MutableRefObject<
+    Record<number, HTMLCanvasElement>
+  >
+  redrawPage: (p: number) => void
 }
 
 function PdfPageView({
@@ -249,7 +268,8 @@ function PdfPageView({
   currentStrokeRef,
   redoStackRef,
   historyRef,
-  renderStroke,
+  highlightCanvasesRef,
+  redrawPage,
 }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -267,6 +287,10 @@ function PdfPageView({
     drawCanvas.height = viewport.height
     drawContextsRef.current[pageIndex] = drawCanvas.getContext('2d')!
     annotationsRef.current[pageIndex] = []
+    const hCanvas = document.createElement('canvas')
+    hCanvas.width = viewport.width
+    hCanvas.height = viewport.height
+    highlightCanvasesRef.current[pageIndex] = hCanvas
 
     let lastX = 0
     let lastY = 0
@@ -290,9 +314,7 @@ function PdfPageView({
         stroke: erased,
       })
       redoStackRef.current = []
-      const ctx = drawContextsRef.current[pageIndex]
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-      strokes.forEach((s) => renderStroke(ctx, s))
+      redrawPage(pageIndex)
     }
 
     function onTouchStart(e: TouchEvent) {
@@ -328,25 +350,59 @@ function PdfPageView({
       const x = (t.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (t.clientY - r.top) * (drawCanvas.height / r.height)
       stroke.points.push({ x, y })
-      const ctx = drawContextsRef.current[pageIndex]
-      ctx.save()
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.lineWidth = stroke.width * DPR * RESOLUTION
       if (stroke.isHighlight) {
-        ctx.globalAlpha = 0.45
-        ctx.globalCompositeOperation = 'multiply'
-        ctx.strokeStyle = PENS.highlighter.color
+        const hc = highlightCanvasesRef.current[pageIndex]
+        if (hc) {
+          const hCtx = hc.getContext('2d')!
+          hCtx.save()
+          hCtx.lineCap = 'round'
+          hCtx.lineJoin = 'round'
+          hCtx.lineWidth = stroke.width * DPR * RESOLUTION
+          hCtx.strokeStyle = PENS.highlighter.color
+          hCtx.beginPath()
+          hCtx.moveTo(lastX, lastY)
+          hCtx.lineTo(x, y)
+          hCtx.stroke()
+          hCtx.restore()
+          const ctx = drawContextsRef.current[pageIndex]
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+          ctx.save()
+          ctx.globalAlpha = 0.45
+          ctx.drawImage(hc, 0, 0)
+          ctx.restore()
+          const pens = (annotationsRef.current[pageIndex] ?? []).filter(
+            (s) => !s.isHighlight && s.points.length >= 2,
+          )
+          if (pens.length) {
+            ctx.save()
+            ctx.lineCap = 'round'
+            ctx.lineJoin = 'round'
+            ctx.lineWidth = PENS.pen.width * DPR * RESOLUTION
+            ctx.strokeStyle = PENS.pen.color
+            ctx.beginPath()
+            pens.forEach((s) => {
+              ctx.moveTo(s.points[0].x, s.points[0].y)
+              s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
+            })
+            ctx.stroke()
+            ctx.restore()
+          }
+        }
       } else {
+        const ctx = drawContextsRef.current[pageIndex]
+        ctx.save()
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.lineWidth = stroke.width * DPR * RESOLUTION
         ctx.globalAlpha = 1
         ctx.globalCompositeOperation = 'source-over'
         ctx.strokeStyle = PENS.pen.color
+        ctx.beginPath()
+        ctx.moveTo(lastX, lastY)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+        ctx.restore()
       }
-      ctx.beginPath()
-      ctx.moveTo(lastX, lastY)
-      ctx.lineTo(x, y)
-      ctx.stroke()
-      ctx.restore()
       lastX = x
       lastY = y
     }
