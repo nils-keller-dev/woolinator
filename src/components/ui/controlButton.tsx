@@ -5,12 +5,11 @@ import FontAwesome6, {
 import { Pressable } from 'react-native'
 import { useCSSVariable } from 'uniwind'
 
-type ControlButtonProps = React.ComponentProps<typeof Pressable> &
-  React.RefAttributes<typeof Pressable> & {
-    iconName: FontAwesome6SolidIconName
-    onPress: () => void
-    isActive?: boolean
-  }
+type ControlButtonProps = React.ComponentProps<typeof Pressable> & {
+  iconName: FontAwesome6SolidIconName
+  onPress: () => void
+  isActive?: boolean
+}
 
 function ControlButton({
   className,
@@ -28,7 +27,7 @@ function ControlButton({
     <Pressable
       onPress={onPress}
       className={cn(
-        'size-13 items-center justify-center rounded-full p-2',
+        'size-11 items-center justify-center rounded-full p-2',
         isActive ? 'bg-foreground' : 'bg-secondary',
         className,
       )}

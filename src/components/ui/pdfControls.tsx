@@ -1,15 +1,22 @@
+import { cn } from '@/lib/utils'
 import { View } from 'react-native'
 import { DrawMode } from '../../../apps/pdf-viewer/dist/types'
 import { ControlButton } from './controlButton'
 import { PdfViewerHandle } from './pdfViewer'
 
-interface PdfControlsProps {
+type PdfControlsProps = React.ComponentProps<typeof View> & {
   mode: DrawMode
   setMode: (mode: DrawMode) => void
   pdfRef: PdfViewerHandle | null
 }
 
-function PdfControls({ setMode, pdfRef, mode }: PdfControlsProps) {
+function PdfControls({
+  className,
+  setMode,
+  pdfRef,
+  mode,
+  ...props
+}: PdfControlsProps) {
   const modeIconMap = [
     { mode: 'scroll', icon: 'arrows-up-down-left-right' },
     { mode: 'pen', icon: 'pen' },
@@ -18,7 +25,10 @@ function PdfControls({ setMode, pdfRef, mode }: PdfControlsProps) {
   ] as const
 
   return (
-    <View className="bg-secondary absolute bottom-4 left-1/2 -translate-x-1/2 flex-row gap-2 rounded-full p-1">
+    <View
+      className={cn('bg-secondary flex-row gap-2 rounded-full p-1', className)}
+      {...props}
+    >
       {modeIconMap.map((el) => (
         <ControlButton
           key={el.mode}

@@ -45,6 +45,7 @@ export default function Index() {
               className="absolute top-2 right-2"
             />
             <PdfControls
+              className="absolute bottom-4 left-1/2 -translate-x-1/2"
               mode={mode}
               setMode={setMode}
               pdfRef={pdfRef.current}
