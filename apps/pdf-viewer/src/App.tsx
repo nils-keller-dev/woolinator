@@ -60,7 +60,9 @@ export default function App() {
     const ctx = drawContextsRef.current[p]
     if (!ctx) return
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    const strokes = annotationsRef.current[p] ?? []
+    const strokes = [...(annotationsRef.current[p] ?? [])]
+    const live = currentStrokeRef.current
+    if (live) strokes.push(live)
 
     const hCanvas = highlightCanvasesRef.current[p]
     if (hCanvas) {
@@ -274,9 +276,6 @@ function PdfPageView({
   useEffect(() => {
     const drawCanvas = drawCanvasRef.current!
 
-    let lastX = 0
-    let lastY = 0
-
     function eraseAt(touch: Touch) {
       const r = drawCanvas.getBoundingClientRect()
       const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
@@ -302,15 +301,14 @@ function PdfPageView({
     function onTouchStartDraw(e: TouchEvent) {
       const m = mode as 'highlighter' | 'pen'
       e.preventDefault()
-
       const t = e.touches[0]
       const r = drawCanvas.getBoundingClientRect()
-      lastX = (t.clientX - r.left) * (drawCanvas.width / r.width)
-      lastY = (t.clientY - r.top) * (drawCanvas.height / r.height)
+      const x = (t.clientX - r.left) * (drawCanvas.width / r.width)
+      const y = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
         isHighlight: m === 'highlighter',
         width: PENS[m].width,
-        points: [{ x: lastX, y: lastY }],
+        points: [{ x, y }],
       }
     }
 
@@ -319,79 +317,16 @@ function PdfPageView({
       eraseAt(e.touches[0])
     }
 
-    function onTouchMoveHighlighter(x: number, y: number, stroke: Stroke) {
-      const hc = highlightCanvasesRef.current[pageIndex]
-      if (hc) {
-        const hCtx = hc.getContext('2d')!
-        hCtx.save()
-        hCtx.lineCap = 'round'
-        hCtx.lineJoin = 'round'
-        hCtx.lineWidth = stroke.width * DPR * RESOLUTION
-        hCtx.strokeStyle = PENS.highlighter.color
-        hCtx.beginPath()
-        hCtx.moveTo(lastX, lastY)
-        hCtx.lineTo(x, y)
-        hCtx.stroke()
-        hCtx.restore()
-        const ctx = drawContextsRef.current[pageIndex]
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-        ctx.save()
-        ctx.globalAlpha = 0.45
-        ctx.drawImage(hc, 0, 0)
-        ctx.restore()
-        const pens = (annotationsRef.current[pageIndex] ?? []).filter(
-          (s) => !s.isHighlight && s.points.length >= 2,
-        )
-        if (pens.length) {
-          ctx.save()
-          ctx.lineCap = 'round'
-          ctx.lineJoin = 'round'
-          ctx.lineWidth = PENS.pen.width * DPR * RESOLUTION
-          ctx.strokeStyle = PENS.pen.color
-          ctx.beginPath()
-          pens.forEach((s) => {
-            ctx.moveTo(s.points[0].x, s.points[0].y)
-            s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
-          })
-          ctx.stroke()
-          ctx.restore()
-        }
-      }
-    }
-
-    function onTouchMovePen(x: number, y: number, stroke: Stroke) {
-      const ctx = drawContextsRef.current[pageIndex]
-      ctx.save()
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.lineWidth = stroke.width * DPR * RESOLUTION
-      ctx.globalAlpha = 1
-      ctx.globalCompositeOperation = 'source-over'
-      ctx.strokeStyle = PENS.pen.color
-      ctx.beginPath()
-      ctx.moveTo(lastX, lastY)
-      ctx.lineTo(x, y)
-      ctx.stroke()
-      ctx.restore()
-    }
-
     function onTouchMoveDraw(e: TouchEvent) {
       e.preventDefault()
-
       const stroke = currentStrokeRef.current!
-
       const t = e.touches[0]
       const r = drawCanvas.getBoundingClientRect()
-      const x = (t.clientX - r.left) * (drawCanvas.width / r.width)
-      const y = (t.clientY - r.top) * (drawCanvas.height / r.height)
-      stroke.points.push({ x, y })
-
-      const touchMoveFunction =
-        mode === 'highlighter' ? onTouchMoveHighlighter : onTouchMovePen
-      touchMoveFunction(x, y, stroke)
-
-      lastX = x
-      lastY = y
+      stroke.points.push({
+        x: (t.clientX - r.left) * (drawCanvas.width / r.width),
+        y: (t.clientY - r.top) * (drawCanvas.height / r.height),
+      })
+      redrawPage(pageIndex)
     }
 
     const touchMoveFunctions = {
