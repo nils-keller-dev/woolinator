@@ -274,9 +274,14 @@ function PdfPageView({
   }, [])
 
   useEffect(() => {
+    if (mode === 'scroll') return
+
     const drawCanvas = drawCanvasRef.current!
 
-    function eraseAt(touch: Touch) {
+    function onTouchStartOrMoveEraser(e: TouchEvent) {
+      e.preventDefault()
+      const touch = e.touches[0]
+
       const r = drawCanvas.getBoundingClientRect()
       const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (touch.clientY - r.top) * (drawCanvas.height / r.height)
@@ -299,8 +304,8 @@ function PdfPageView({
     }
 
     function onTouchStartDraw(e: TouchEvent) {
-      const m = mode as 'highlighter' | 'pen'
       e.preventDefault()
+      const m = mode as 'highlighter' | 'pen'
       const t = e.touches[0]
       const r = drawCanvas.getBoundingClientRect()
       const x = (t.clientX - r.left) * (drawCanvas.width / r.width)
@@ -310,11 +315,6 @@ function PdfPageView({
         width: PENS[m].width,
         points: [{ x, y }],
       }
-    }
-
-    function onTouchStartOrMoveEraser(e: TouchEvent) {
-      e.preventDefault()
-      eraseAt(e.touches[0])
     }
 
     function onTouchMoveDraw(e: TouchEvent) {
@@ -330,14 +330,12 @@ function PdfPageView({
     }
 
     const touchMoveFunctions = {
-      scroll: () => {},
       pen: onTouchMoveDraw,
       highlighter: onTouchMoveDraw,
       eraser: onTouchStartOrMoveEraser,
     }
 
     const touchStartFunctions = {
-      scroll: () => {},
       pen: onTouchStartDraw,
       highlighter: onTouchStartDraw,
       eraser: onTouchStartOrMoveEraser,
