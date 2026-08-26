@@ -21,7 +21,7 @@ interface PageInfo {
   cssH: number
 }
 
-type Action = { type: 'draw' | 'erase'; page: number; stroke: Stroke }
+type Action = { undo: () => void; redo: () => void }
 
 declare global {
   interface Window {
@@ -52,8 +52,10 @@ export default function App() {
   const annotationsRef = useRef<Record<number, Stroke[]>>({})
   const drawContextsRef = useRef<Record<number, CanvasRenderingContext2D>>({})
   const currentStrokeRef = useRef<Stroke | null>(null)
-  const historyRef = useRef<Action[]>([])
-  const redoStackRef = useRef<Action[]>([])
+  const undoRedoRef = useRef<{ history: Action[]; redo: Action[] }>({
+    history: [],
+    redo: [],
+  })
   const highlightCanvasesRef = useRef<Record<number, HTMLCanvasElement>>({})
 
   const redrawPage = useCallback((p: number) => {
@@ -107,32 +109,18 @@ export default function App() {
   }, [])
 
   const undo = useCallback(() => {
-    const action = historyRef.current.pop()
+    const action = undoRedoRef.current.history.pop()
     if (!action) return
-    if (action.type === 'draw') {
-      const strokes = annotationsRef.current[action.page]
-      const idx = strokes.findIndex((s) => s === action.stroke)
-      if (idx !== -1) strokes.splice(idx, 1)
-    } else {
-      annotationsRef.current[action.page].push(action.stroke)
-    }
-    redoStackRef.current.push(action)
-    redrawPage(action.page)
-  }, [redrawPage])
+    action.undo()
+    undoRedoRef.current.redo.push(action)
+  }, [])
 
   const redo = useCallback(() => {
-    const action = redoStackRef.current.pop()
+    const action = undoRedoRef.current.redo.pop()
     if (!action) return
-    if (action.type === 'draw') {
-      annotationsRef.current[action.page].push(action.stroke)
-    } else {
-      const strokes = annotationsRef.current[action.page]
-      const idx = strokes.findIndex((s) => s === action.stroke)
-      if (idx !== -1) strokes.splice(idx, 1)
-    }
-    historyRef.current.push(action)
-    redrawPage(action.page)
-  }, [redrawPage])
+    action.redo()
+    undoRedoRef.current.history.push(action)
+  }, [])
 
   const loadPdf = useCallback(async (base64: string) => {
     const binary = atob(base64)
@@ -211,8 +199,7 @@ export default function App() {
             annotationsRef={annotationsRef}
             drawContextsRef={drawContextsRef}
             currentStrokeRef={currentStrokeRef}
-            redoStackRef={redoStackRef}
-            historyRef={historyRef}
+            undoRedoRef={undoRedoRef}
             highlightCanvasesRef={highlightCanvasesRef}
             redrawPage={redrawPage}
           />
@@ -226,16 +213,11 @@ interface PdfPageProps {
   pageIndex: number
   pageInfo: PageInfo
   mode: Mode
-  annotationsRef: React.MutableRefObject<Record<number, Stroke[]>>
-  drawContextsRef: React.MutableRefObject<
-    Record<number, CanvasRenderingContext2D>
-  >
-  currentStrokeRef: React.MutableRefObject<Stroke | null>
-  historyRef: React.MutableRefObject<Action[]>
-  redoStackRef: React.MutableRefObject<Action[]>
-  highlightCanvasesRef: React.MutableRefObject<
-    Record<number, HTMLCanvasElement>
-  >
+  annotationsRef: React.RefObject<Record<number, Stroke[]>>
+  drawContextsRef: React.RefObject<Record<number, CanvasRenderingContext2D>>
+  currentStrokeRef: React.RefObject<Stroke | null>
+  undoRedoRef: React.RefObject<{ history: Action[]; redo: Action[] }>
+  highlightCanvasesRef: React.RefObject<Record<number, HTMLCanvasElement>>
   redrawPage: (p: number) => void
 }
 
@@ -246,8 +228,7 @@ function PdfPageView({
   annotationsRef,
   drawContextsRef,
   currentStrokeRef,
-  redoStackRef,
-  historyRef,
+  undoRedoRef,
   highlightCanvasesRef,
   redrawPage,
 }: PdfPageProps) {
@@ -294,12 +275,18 @@ function PdfPageView({
       )
       if (idx === -1) return
       const [erased] = strokes.splice(idx, 1)
-      historyRef.current.push({
-        type: 'erase',
-        page: pageIndex,
-        stroke: erased,
+      undoRedoRef.current.history.push({
+        undo: () => {
+          annotationsRef.current[pageIndex].push(erased)
+          redrawPage(pageIndex)
+        },
+        redo: () => {
+          const arr = annotationsRef.current[pageIndex]
+          arr.splice(arr.indexOf(erased), 1)
+          redrawPage(pageIndex)
+        },
       })
-      redoStackRef.current = []
+      undoRedoRef.current.redo = []
       redrawPage(pageIndex)
     }
 
@@ -345,8 +332,18 @@ function PdfPageView({
       const stroke = currentStrokeRef.current
       if (!stroke) return
       annotationsRef.current[pageIndex].push(stroke)
-      historyRef.current.push({ type: 'draw', page: pageIndex, stroke })
-      redoStackRef.current = []
+      undoRedoRef.current.history.push({
+        undo: () => {
+          const arr = annotationsRef.current[pageIndex]
+          arr.splice(arr.indexOf(stroke), 1)
+          redrawPage(pageIndex)
+        },
+        redo: () => {
+          annotationsRef.current[pageIndex].push(stroke)
+          redrawPage(pageIndex)
+        },
+      })
+      undoRedoRef.current.redo = []
       currentStrokeRef.current = null
     }
 
