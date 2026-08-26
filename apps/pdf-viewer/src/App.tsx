@@ -48,7 +48,6 @@ const PENS = {
 
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
-  const scrollRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<Mode>('scroll')
   const annotationsRef = useRef<Record<number, Stroke[]>>({})
   const drawContextsRef = useRef<Record<number, CanvasRenderingContext2D>>({})
@@ -56,8 +55,6 @@ export default function App() {
   const historyRef = useRef<Action[]>([])
   const redoStackRef = useRef<Action[]>([])
   const highlightCanvasesRef = useRef<Record<number, HTMLCanvasElement>>({})
-
-  console.log('re-rendering')
 
   const redrawPage = useCallback((p: number) => {
     const ctx = drawContextsRef.current[p]
@@ -136,14 +133,6 @@ export default function App() {
   }, [redrawPage])
 
   const loadPdf = useCallback(async (base64: string) => {
-    annotationsRef.current = {}
-    drawContextsRef.current = {}
-    highlightCanvasesRef.current = {}
-    historyRef.current = []
-    redoStackRef.current = []
-    setPages([])
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -190,7 +179,6 @@ export default function App() {
 
   return (
     <div
-      ref={scrollRef}
       style={{
         width: '100%',
         height: '100%',

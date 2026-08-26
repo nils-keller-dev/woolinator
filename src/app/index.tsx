@@ -32,14 +32,9 @@ export default function Index() {
   const [barStyle, setBarStyle] = useState<StatusBarStyle>(
     colorSchemeToBarStyle(Appearance.getColorScheme()),
   )
+  const [pdfViewerVisible, setPdfViewerVisible] = useState(true)
   const pdfRef = useRef<PdfViewerHandle>(null)
   const [background] = useCSSVariable(['--color-background'])
-
-  function colorSchemeToBarStyle(
-    colorScheme: ColorSchemeName | null | undefined,
-  ) {
-    return colorScheme === 'dark' ? 'light-content' : 'dark-content'
-  }
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
@@ -48,15 +43,27 @@ export default function Index() {
     return () => subscription.remove()
   }, [])
 
+  function colorSchemeToBarStyle(
+    colorScheme: ColorSchemeName | null | undefined,
+  ) {
+    return colorScheme === 'dark' ? 'light-content' : 'dark-content'
+  }
+
   async function pickPdf() {
     const result = await DocumentPicker.getDocumentAsync({
       type: 'application/pdf',
       copyToCacheDirectory: true,
     })
     if (!result.canceled) {
+      remountPdfViewer()
       setPdfUri(result.assets[0].uri)
       setMode('scroll')
     }
+  }
+
+  function remountPdfViewer() {
+    setPdfViewerVisible(false)
+    setTimeout(() => setPdfViewerVisible(true), 0)
   }
 
   return (
@@ -75,7 +82,7 @@ export default function Index() {
           <Counter title="Maschen" />
         </View>
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
-          {pdfUri ? (
+          {pdfUri && pdfViewerVisible ? (
             <>
               <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode as DrawMode} />
               <ControlButton
