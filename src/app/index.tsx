@@ -4,6 +4,7 @@ import { PdfControls } from '@/components/ui/pdfControls'
 import type { PdfViewerHandle } from '@/components/ui/pdfViewer'
 import { PdfViewer } from '@/components/ui/pdfViewer'
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
+import { DrawMode } from '@woolinator/pdf-viewer/types'
 import * as DocumentPicker from 'expo-document-picker'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -17,7 +18,6 @@ import {
 } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useCSSVariable } from 'uniwind'
-import { DrawMode } from '../../apps/pdf-viewer/dist/types'
 
 export default function Index() {
   const [pdfUri, setPdfUri] = useState<string | null>(null)
