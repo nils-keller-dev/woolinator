@@ -49,8 +49,6 @@ const PENS = {
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
   const [mode, setMode] = useState<Mode>('scroll')
-  const annotationsRef = useRef<Record<number, Stroke[]>>({})
-  const currentStrokeRef = useRef<Stroke | null>(null)
   const undoRedoRef = useRef<{ history: Action[]; redo: Action[] }>({
     history: [],
     redo: [],
@@ -141,11 +139,8 @@ export default function App() {
         {pages.map((pageInfo, i) => (
           <PdfPageView
             key={i}
-            pageIndex={i + 1}
             pageInfo={pageInfo}
             mode={mode}
-            annotationsRef={annotationsRef}
-            currentStrokeRef={currentStrokeRef}
             undoRedoRef={undoRedoRef}
           />
         ))}
@@ -155,32 +150,24 @@ export default function App() {
 }
 
 interface PdfPageProps {
-  pageIndex: number
   pageInfo: PageInfo
   mode: Mode
-  annotationsRef: React.RefObject<Record<number, Stroke[]>>
-  currentStrokeRef: React.RefObject<Stroke | null>
   undoRedoRef: React.RefObject<{ history: Action[]; redo: Action[] }>
 }
 
-function PdfPageView({
-  pageIndex,
-  pageInfo,
-  mode,
-  annotationsRef,
-  currentStrokeRef,
-  undoRedoRef,
-}: PdfPageProps) {
+function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const annotationsRef = useRef<Stroke[]>([])
+  const currentStrokeRef = useRef<Stroke | null>(null)
   const { pdfPage, viewport, cssW, cssH } = pageInfo
 
   const redrawPage = useCallback(() => {
     const ctx = drawCanvasRef.current?.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    const strokes = [...(annotationsRef.current[pageIndex] ?? [])]
+    const strokes = [...annotationsRef.current]
     const live = currentStrokeRef.current
     if (live) strokes.push(live)
 
@@ -236,7 +223,7 @@ function PdfPageView({
 
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
-    annotationsRef.current[pageIndex] = []
+    annotationsRef.current = []
     const hCanvas = document.createElement('canvas')
     hCanvas.width = viewport.width
     hCanvas.height = viewport.height
@@ -255,7 +242,7 @@ function PdfPageView({
       const r = drawCanvas.getBoundingClientRect()
       const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (touch.clientY - r.top) * (drawCanvas.height / r.height)
-      const strokes = annotationsRef.current[pageIndex]
+      const strokes = annotationsRef.current
       const idx = strokes.findIndex((s) =>
         s.points.some(
           (p) =>
@@ -266,11 +253,11 @@ function PdfPageView({
       const [erased] = strokes.splice(idx, 1)
       undoRedoRef.current.history.push({
         undo: () => {
-          annotationsRef.current[pageIndex].push(erased)
+          annotationsRef.current.push(erased)
           redrawPage()
         },
         redo: () => {
-          const arr = annotationsRef.current[pageIndex]
+          const arr = annotationsRef.current
           arr.splice(arr.indexOf(erased), 1)
           redrawPage()
         },
@@ -320,15 +307,15 @@ function PdfPageView({
     function onTouchEnd() {
       const stroke = currentStrokeRef.current
       if (!stroke) return
-      annotationsRef.current[pageIndex].push(stroke)
+      annotationsRef.current.push(stroke)
       undoRedoRef.current.history.push({
         undo: () => {
-          const arr = annotationsRef.current[pageIndex]
+          const arr = annotationsRef.current
           arr.splice(arr.indexOf(stroke), 1)
           redrawPage()
         },
         redo: () => {
-          annotationsRef.current[pageIndex].push(stroke)
+          annotationsRef.current.push(stroke)
           redrawPage()
         },
       })
