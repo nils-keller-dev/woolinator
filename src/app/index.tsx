@@ -50,6 +50,7 @@ export default function Index() {
     })
     if (!result.canceled) {
       setPdfUri(result.assets[0].uri)
+      setMode('scroll')
     }
   }
 
