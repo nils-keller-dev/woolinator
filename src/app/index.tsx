@@ -16,12 +16,19 @@ import {
   Text,
   View,
 } from 'react-native'
+import { createMMKV, useMMKVString } from 'react-native-mmkv'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useCSSVariable } from 'uniwind'
 
+const storage = createMMKV()
+
+if (!storage.getAllKeys().length) {
+  storage.set('mode', 'scroll')
+}
+
 export default function Index() {
-  const [pdfUri, setPdfUri] = useState<string | null>(null)
-  const [mode, setMode] = useState<DrawMode>('scroll')
+  const [pdfUri, setPdfUri] = useMMKVString('pdfUri')
+  const [mode, setMode] = useMMKVString('mode')
   const [barStyle, setBarStyle] = useState<StatusBarStyle>(
     colorSchemeToBarStyle(Appearance.getColorScheme()),
   )
@@ -72,7 +79,7 @@ export default function Index() {
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
           {pdfUri ? (
             <>
-              <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode} />
+              <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode as DrawMode} />
               <ControlButton
                 iconName="file-import"
                 onPress={pickPdf}
@@ -80,7 +87,7 @@ export default function Index() {
               />
               <PdfControls
                 className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                mode={mode}
+                mode={mode as DrawMode}
                 setMode={setMode}
                 pdfRef={pdfRef.current}
               />
