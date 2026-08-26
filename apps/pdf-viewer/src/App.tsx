@@ -54,6 +54,11 @@ export default function App() {
     redo: [],
   })
 
+  const onAction = useCallback((action: Action) => {
+    undoRedoRef.current.history.push(action)
+    undoRedoRef.current.redo = []
+  }, [])
+
   const undo = useCallback(() => {
     const action = undoRedoRef.current.history.pop()
     if (!action) return
@@ -141,7 +146,7 @@ export default function App() {
             key={i}
             pageInfo={pageInfo}
             mode={mode}
-            undoRedoRef={undoRedoRef}
+            onAction={onAction}
           />
         ))}
       </div>
@@ -152,10 +157,10 @@ export default function App() {
 interface PdfPageProps {
   pageInfo: PageInfo
   mode: Mode
-  undoRedoRef: React.RefObject<{ history: Action[]; redo: Action[] }>
+  onAction: (action: Action) => void
 }
 
-function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
+function PdfPageView({ pageInfo, mode, onAction }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -251,7 +256,7 @@ function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
       )
       if (idx === -1) return
       const [erased] = strokes.splice(idx, 1)
-      undoRedoRef.current.history.push({
+      onAction({
         undo: () => {
           annotationsRef.current.push(erased)
           redrawPage()
@@ -262,7 +267,6 @@ function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
           redrawPage()
         },
       })
-      undoRedoRef.current.redo = []
       redrawPage()
     }
 
@@ -308,7 +312,7 @@ function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
       const stroke = currentStrokeRef.current
       if (!stroke) return
       annotationsRef.current.push(stroke)
-      undoRedoRef.current.history.push({
+      onAction({
         undo: () => {
           const arr = annotationsRef.current
           arr.splice(arr.indexOf(stroke), 1)
@@ -319,7 +323,6 @@ function PdfPageView({ pageInfo, mode, undoRedoRef }: PdfPageProps) {
           redrawPage()
         },
       })
-      undoRedoRef.current.redo = []
       currentStrokeRef.current = null
     }
 
