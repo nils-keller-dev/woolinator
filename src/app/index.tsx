@@ -89,7 +89,8 @@ export default function Index() {
                 className="absolute bottom-4 left-1/2 -translate-x-1/2"
                 mode={mode as DrawMode}
                 setMode={setMode}
-                pdfRef={pdfRef.current}
+                onUndo={() => pdfRef.current?.undo()}
+                onRedo={() => pdfRef.current?.redo()}
               />
             </>
           ) : (

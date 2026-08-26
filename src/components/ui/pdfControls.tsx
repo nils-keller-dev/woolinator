@@ -2,19 +2,20 @@ import { cn } from '@/lib/utils'
 import type { DrawMode } from '@woolinator/pdf-viewer/types'
 import { View } from 'react-native'
 import { ControlButton } from './controlButton'
-import { PdfViewerHandle } from './pdfViewer'
 
 type PdfControlsProps = React.ComponentProps<typeof View> & {
   mode: DrawMode
   setMode: (mode: DrawMode) => void
-  pdfRef: PdfViewerHandle | null
+  onUndo: () => void
+  onRedo: () => void
 }
 
 function PdfControls({
   className,
   setMode,
-  pdfRef,
   mode,
+  onUndo,
+  onRedo,
   ...props
 }: PdfControlsProps) {
   const modeIconMap = [
@@ -40,12 +41,12 @@ function PdfControls({
       <ControlButton
         isActive={false}
         iconName="arrow-rotate-left"
-        onPress={() => pdfRef?.undo()}
+        onPress={onUndo}
       />
       <ControlButton
         isActive={false}
         iconName="arrow-rotate-right"
-        onPress={() => pdfRef?.redo()}
+        onPress={onRedo}
       />
     </View>
   )
