@@ -12,7 +12,6 @@ interface Stroke {
   isHighlight: boolean
   width: number
   points: { x: number; y: number }[]
-  time: number
 }
 
 interface PageInfo {
@@ -50,13 +49,15 @@ const PENS = {
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const modeRef = useRef<Mode>('scroll')
+  const [mode, setMode] = useState<Mode>('scroll')
   const annotationsRef = useRef<Record<number, Stroke[]>>({})
   const drawContextsRef = useRef<Record<number, CanvasRenderingContext2D>>({})
   const currentStrokeRef = useRef<Stroke | null>(null)
   const historyRef = useRef<Action[]>([])
   const redoStackRef = useRef<Action[]>([])
   const highlightCanvasesRef = useRef<Record<number, HTMLCanvasElement>>({})
+
+  console.log('re-rendering')
 
   const redrawPage = useCallback((p: number) => {
     const ctx = drawContextsRef.current[p]
@@ -134,15 +135,6 @@ export default function App() {
     redrawPage(action.page)
   }, [redrawPage])
 
-  const setMode = useCallback((m: Mode) => {
-    modeRef.current = m
-    document.querySelectorAll<HTMLElement>('.draw-canvas').forEach((c) => {
-      c.style.pointerEvents = m !== 'scroll' ? 'auto' : 'none'
-    })
-    if (scrollRef.current)
-      scrollRef.current.style.overflowY = m === 'scroll' ? 'auto' : 'hidden'
-  }, [])
-
   const loadPdf = useCallback(async (base64: string) => {
     annotationsRef.current = {}
     drawContextsRef.current = {}
@@ -199,15 +191,13 @@ export default function App() {
   return (
     <div
       ref={scrollRef}
-      style={
-        {
-          width: '100%',
-          height: '100%',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-        } as React.CSSProperties
-      }
+      style={{
+        width: '100%',
+        height: '100%',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        overflowY: mode === 'scroll' ? 'auto' : 'hidden',
+      }}
     >
       <div style={{ padding: '8px 0' }}>
         {pages.length === 0 && (
@@ -227,7 +217,7 @@ export default function App() {
             key={i}
             pageIndex={i + 1}
             pageInfo={pageInfo}
-            modeRef={modeRef}
+            mode={mode}
             annotationsRef={annotationsRef}
             drawContextsRef={drawContextsRef}
             currentStrokeRef={currentStrokeRef}
@@ -245,7 +235,7 @@ export default function App() {
 interface PdfPageProps {
   pageIndex: number
   pageInfo: PageInfo
-  modeRef: React.MutableRefObject<Mode>
+  mode: Mode
   annotationsRef: React.MutableRefObject<Record<number, Stroke[]>>
   drawContextsRef: React.MutableRefObject<
     Record<number, CanvasRenderingContext2D>
@@ -262,7 +252,7 @@ interface PdfPageProps {
 function PdfPageView({
   pageIndex,
   pageInfo,
-  modeRef,
+  mode,
   annotationsRef,
   drawContextsRef,
   currentStrokeRef,
@@ -274,6 +264,9 @@ function PdfPageView({
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const { pdfPage, viewport, cssW, cssH } = pageInfo
+
+  const modeRef = useRef(mode)
+  modeRef.current = mode
 
   useEffect(() => {
     const pdfCanvas = pdfCanvasRef.current!
@@ -332,7 +325,6 @@ function PdfPageView({
         isHighlight: modeRef.current === 'highlighter',
         width: PENS[modeRef.current].width,
         points: [{ x: lastX, y: lastY }],
-        time: Date.now(),
       }
     }
 
@@ -443,7 +435,6 @@ function PdfPageView({
       />
       <canvas
         ref={drawCanvasRef}
-        className="draw-canvas"
         style={{
           position: 'absolute',
           top: 0,
@@ -451,7 +442,7 @@ function PdfPageView({
           width: cssW,
           height: cssH,
           touchAction: 'none',
-          pointerEvents: 'none',
+          pointerEvents: mode !== 'scroll' ? 'auto' : 'none',
         }}
       />
     </div>
