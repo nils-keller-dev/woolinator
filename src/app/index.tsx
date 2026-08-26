@@ -42,11 +42,9 @@ export default function Index() {
   }
 
   useEffect(() => {
-    const subscription = Appearance.addChangeListener(
-      ({ colorScheme: newColorScheme }) => {
-        setBarStyle(colorSchemeToBarStyle(newColorScheme))
-      },
-    )
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setBarStyle(colorSchemeToBarStyle(colorScheme))
+    })
     return () => subscription.remove()
   }, [])
 
