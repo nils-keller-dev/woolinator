@@ -50,63 +50,11 @@ export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
   const [mode, setMode] = useState<Mode>('scroll')
   const annotationsRef = useRef<Record<number, Stroke[]>>({})
-  const drawContextsRef = useRef<Record<number, CanvasRenderingContext2D>>({})
   const currentStrokeRef = useRef<Stroke | null>(null)
   const undoRedoRef = useRef<{ history: Action[]; redo: Action[] }>({
     history: [],
     redo: [],
   })
-  const highlightCanvasesRef = useRef<Record<number, HTMLCanvasElement>>({})
-
-  const redrawPage = useCallback((p: number) => {
-    const ctx = drawContextsRef.current[p]
-    if (!ctx) return
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    const strokes = [...(annotationsRef.current[p] ?? [])]
-    const live = currentStrokeRef.current
-    if (live) strokes.push(live)
-
-    const hCanvas = highlightCanvasesRef.current[p]
-    if (hCanvas) {
-      const hCtx = hCanvas.getContext('2d')!
-      hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height)
-      const highlights = strokes.filter(
-        (s) => s.isHighlight && s.points.length >= 2,
-      )
-      if (highlights.length) {
-        hCtx.lineCap = 'round'
-        hCtx.lineJoin = 'round'
-        hCtx.lineWidth = PENS.highlighter.width * DPR * RESOLUTION
-        hCtx.strokeStyle = PENS.highlighter.color
-        hCtx.beginPath()
-        highlights.forEach((s) => {
-          hCtx.moveTo(s.points[0].x, s.points[0].y)
-          s.points.slice(1).forEach((pt) => hCtx.lineTo(pt.x, pt.y))
-        })
-        hCtx.stroke()
-        ctx.save()
-        ctx.globalAlpha = 0.45
-        ctx.drawImage(hCanvas, 0, 0)
-        ctx.restore()
-      }
-    }
-
-    const pens = strokes.filter((s) => !s.isHighlight && s.points.length >= 2)
-    if (pens.length) {
-      ctx.save()
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.lineWidth = PENS.pen.width * DPR * RESOLUTION
-      ctx.strokeStyle = PENS.pen.color
-      ctx.beginPath()
-      pens.forEach((s) => {
-        ctx.moveTo(s.points[0].x, s.points[0].y)
-        s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
-      })
-      ctx.stroke()
-      ctx.restore()
-    }
-  }, [])
 
   const undo = useCallback(() => {
     const action = undoRedoRef.current.history.pop()
@@ -197,11 +145,8 @@ export default function App() {
             pageInfo={pageInfo}
             mode={mode}
             annotationsRef={annotationsRef}
-            drawContextsRef={drawContextsRef}
             currentStrokeRef={currentStrokeRef}
             undoRedoRef={undoRedoRef}
-            highlightCanvasesRef={highlightCanvasesRef}
-            redrawPage={redrawPage}
           />
         ))}
       </div>
@@ -214,11 +159,8 @@ interface PdfPageProps {
   pageInfo: PageInfo
   mode: Mode
   annotationsRef: React.RefObject<Record<number, Stroke[]>>
-  drawContextsRef: React.RefObject<Record<number, CanvasRenderingContext2D>>
   currentStrokeRef: React.RefObject<Stroke | null>
   undoRedoRef: React.RefObject<{ history: Action[]; redo: Action[] }>
-  highlightCanvasesRef: React.RefObject<Record<number, HTMLCanvasElement>>
-  redrawPage: (p: number) => void
 }
 
 function PdfPageView({
@@ -226,15 +168,63 @@ function PdfPageView({
   pageInfo,
   mode,
   annotationsRef,
-  drawContextsRef,
   currentStrokeRef,
   undoRedoRef,
-  highlightCanvasesRef,
-  redrawPage,
 }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
+  const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const { pdfPage, viewport, cssW, cssH } = pageInfo
+
+  const redrawPage = useCallback(() => {
+    const ctx = drawCanvasRef.current?.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    const strokes = [...(annotationsRef.current[pageIndex] ?? [])]
+    const live = currentStrokeRef.current
+    if (live) strokes.push(live)
+
+    const hCanvas = hCanvasRef.current
+    if (hCanvas) {
+      const hCtx = hCanvas.getContext('2d')!
+      hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height)
+      const highlights = strokes.filter(
+        (s) => s.isHighlight && s.points.length >= 2,
+      )
+      if (highlights.length) {
+        hCtx.lineCap = 'round'
+        hCtx.lineJoin = 'round'
+        hCtx.lineWidth = PENS.highlighter.width * DPR * RESOLUTION
+        hCtx.strokeStyle = PENS.highlighter.color
+        hCtx.beginPath()
+        highlights.forEach((s) => {
+          hCtx.moveTo(s.points[0].x, s.points[0].y)
+          s.points.slice(1).forEach((pt) => hCtx.lineTo(pt.x, pt.y))
+        })
+        hCtx.stroke()
+        ctx.save()
+        ctx.globalAlpha = 0.45
+        ctx.drawImage(hCanvas, 0, 0)
+        ctx.restore()
+      }
+    }
+
+    const pens = strokes.filter((s) => !s.isHighlight && s.points.length >= 2)
+    if (pens.length) {
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.lineWidth = PENS.pen.width * DPR * RESOLUTION
+      ctx.strokeStyle = PENS.pen.color
+      ctx.beginPath()
+      pens.forEach((s) => {
+        ctx.moveTo(s.points[0].x, s.points[0].y)
+        s.points.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y))
+      })
+      ctx.stroke()
+      ctx.restore()
+    }
+  }, [])
 
   useEffect(() => {
     const pdfCanvas = pdfCanvasRef.current!
@@ -246,12 +236,11 @@ function PdfPageView({
 
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
-    drawContextsRef.current[pageIndex] = drawCanvas.getContext('2d')!
     annotationsRef.current[pageIndex] = []
     const hCanvas = document.createElement('canvas')
     hCanvas.width = viewport.width
     hCanvas.height = viewport.height
-    highlightCanvasesRef.current[pageIndex] = hCanvas
+    hCanvasRef.current = hCanvas
   }, [])
 
   useEffect(() => {
@@ -278,16 +267,16 @@ function PdfPageView({
       undoRedoRef.current.history.push({
         undo: () => {
           annotationsRef.current[pageIndex].push(erased)
-          redrawPage(pageIndex)
+          redrawPage()
         },
         redo: () => {
           const arr = annotationsRef.current[pageIndex]
           arr.splice(arr.indexOf(erased), 1)
-          redrawPage(pageIndex)
+          redrawPage()
         },
       })
       undoRedoRef.current.redo = []
-      redrawPage(pageIndex)
+      redrawPage()
     }
 
     function onTouchStartDraw(e: TouchEvent) {
@@ -313,7 +302,7 @@ function PdfPageView({
         x: (t.clientX - r.left) * (drawCanvas.width / r.width),
         y: (t.clientY - r.top) * (drawCanvas.height / r.height),
       })
-      redrawPage(pageIndex)
+      redrawPage()
     }
 
     const touchMoveFunctions = {
@@ -336,11 +325,11 @@ function PdfPageView({
         undo: () => {
           const arr = annotationsRef.current[pageIndex]
           arr.splice(arr.indexOf(stroke), 1)
-          redrawPage(pageIndex)
+          redrawPage()
         },
         redo: () => {
           annotationsRef.current[pageIndex].push(stroke)
-          redrawPage(pageIndex)
+          redrawPage()
         },
       })
       undoRedoRef.current.redo = []
