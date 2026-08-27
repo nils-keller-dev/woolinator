@@ -78,8 +78,8 @@ export default function Index() {
       >
         <StatusBar barStyle={barStyle} />
         <View className="flex w-full gap-5">
-          <Counter title="Reihen / Runden" />
-          <Counter title="Maschen" />
+          <Counter title="Reihen / Runden" id="rows-rounds" />
+          <Counter title="Maschen" id="stitches" />
         </View>
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
           {pdfUri && pdfViewerVisible ? (

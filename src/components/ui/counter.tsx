@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
-import { useState } from 'react'
 import { TextInput, View } from 'react-native'
+import { useMMKVString } from 'react-native-mmkv/lib/hooks/useMMKVString'
 import { useCSSVariable } from 'uniwind'
 import { CounterButton } from './counterButton'
 
@@ -11,17 +11,18 @@ interface CounterProps {
   min?: number
   max?: number
   title: string
+  id: string
 }
 
-export function Counter({
-  initialValue = 0,
-  min = 0,
-  max = 999,
-  title,
-}: CounterProps) {
-  const [inputValue, setInputValue] = useState(String(initialValue))
+export function Counter({ min = 0, max = 999, title, id }: CounterProps) {
+  const [inputValue, setInputValue] = useMMKVString(`counter-${id}`)
   const foreground = useCSSVariable('--color-foreground') as string
-  const count = parseInt(inputValue, 10) || 0
+
+  if (inputValue === undefined) {
+    setInputValue(String(min))
+  }
+
+  const count = parseInt(inputValue ?? String(min), 10)
 
   const update = (next: number) => setInputValue(String(next))
 
@@ -37,7 +38,7 @@ export function Counter({
     <View className="w-full gap-2.5">
       <View className="w-full flex-row items-center justify-between">
         <Text className="text-foreground text-xl">{title}</Text>
-        <Button onPress={() => update(initialValue)}>
+        <Button onPress={() => update(min)}>
           <Text>Reset</Text>
         </Button>
       </View>
