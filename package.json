@@ -53,6 +53,7 @@
   },
   "scripts": {
     "build:pdf": "npm run build --workspace=@woolinator/pdf-viewer",
+    "postinstall": "npm run build:pdf",
     "preandroid": "npm run build:pdf",
     "start": "expo start",
     "android": "expo run:android",
