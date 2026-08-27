@@ -2,7 +2,7 @@ import type { PageViewport, PDFPageProxy } from 'pdfjs-dist'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Message, DrawMode as Mode } from './types'
+import { DrawMode, ViewerCommand } from './types'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
   new Blob([workerCode], { type: 'application/javascript' }),
@@ -48,7 +48,7 @@ const PENS = {
 
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
-  const [mode, setMode] = useState<Mode>('scroll')
+  const [mode, setMode] = useState<DrawMode>('scroll')
   const undoRedoRef = useRef<{ history: Action[]; redo: Action[] }>({
     history: [],
     redo: [],
@@ -92,20 +92,15 @@ export default function App() {
     }
 
     setPages(pageInfos)
-    window.ReactNativeWebView?.postMessage(
-      JSON.stringify({ type: 'loaded', pages: pdf.numPages }),
-    )
   }, [])
 
   useEffect(() => {
     function handleMsg(e: MessageEvent) {
-      try {
-        const msg = JSON.parse(e.data as string) as Message
-        if (msg.type === 'loadPdf') loadPdf(msg.data)
-        else if (msg.type === 'setMode') setMode(msg.data as Mode)
-        else if (msg.type === 'undo') undo()
-        else if (msg.type === 'redo') redo()
-      } catch (_) {}
+      const msg = JSON.parse(e.data) as ViewerCommand
+      if (msg.type === 'loadPdf') loadPdf(msg.data)
+      else if (msg.type === 'setMode') setMode(msg.data)
+      else if (msg.type === 'undo') undo()
+      else if (msg.type === 'redo') redo()
     }
 
     document.addEventListener('message', handleMsg as EventListener)
@@ -156,7 +151,7 @@ export default function App() {
 
 interface PdfPageProps {
   pageInfo: PageInfo
-  mode: Mode
+  mode: DrawMode
   onAction: (action: Action) => void
 }
 

@@ -1,7 +1,9 @@
 export type DrawMode = 'scroll' | 'pen' | 'highlighter' | 'eraser'
 
-export type Message =
+export type ViewerCommand =
   | { type: 'loadPdf'; data: string }
-  | { type: 'setMode'; data: string }
+  | { type: 'setMode'; data: DrawMode }
   | { type: 'undo' }
   | { type: 'redo' }
+
+export type ViewerEvent = { type: 'ready' }

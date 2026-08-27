@@ -1,5 +1,9 @@
 import HTML from '@woolinator/pdf-viewer'
-import type { DrawMode, Message } from '@woolinator/pdf-viewer/types'
+import {
+  type DrawMode,
+  type ViewerCommand,
+  type ViewerEvent,
+} from '@woolinator/pdf-viewer/types'
 import {
   forwardRef,
   useEffect,
@@ -26,7 +30,7 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
     const webViewRef = useRef<WebView>(null)
     const [isReady, setIsReady] = useState(false)
 
-    function postMessage(message: Message) {
+    function postMessage(message: ViewerCommand) {
       webViewRef.current?.postMessage(JSON.stringify(message))
     }
 
@@ -54,7 +58,8 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
     }
 
     async function onMessage(event: WebViewMessageEvent) {
-      if (JSON.parse(event.nativeEvent.data).type === 'ready') {
+      const msg = JSON.parse(event.nativeEvent.data) as ViewerEvent
+      if (msg.type === 'ready') {
         setIsReady(true)
       }
     }
