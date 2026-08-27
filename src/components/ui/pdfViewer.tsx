@@ -59,9 +59,7 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
 
     async function onMessage(event: WebViewMessageEvent) {
       const msg = JSON.parse(event.nativeEvent.data) as ViewerEvent
-      if (msg.type === 'ready') {
-        setIsReady(true)
-      }
+      if (msg.type === 'ready') setIsReady(true)
     }
 
     return (

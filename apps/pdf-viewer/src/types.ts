@@ -1,4 +1,5 @@
 export type Stroke = {
+  id: number
   isHighlight: boolean
   width: number
   points: { x: number; y: number }[]
@@ -13,4 +14,6 @@ export type ViewerCommand =
   | { type: 'redo' }
 
 export type ViewerEvent =
-  { type: 'ready' } | { type: 'addStroke'; data: Stroke }
+  | { type: 'ready' }
+  | { type: 'addStroke'; data: Stroke }
+  | { type: 'removeStroke'; data: Stroke['id'] }

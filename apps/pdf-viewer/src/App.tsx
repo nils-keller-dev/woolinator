@@ -2,7 +2,7 @@ import type { PageViewport, PDFPageProxy } from 'pdfjs-dist'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DrawMode, Stroke, ViewerCommand } from './types'
+import { DrawMode, Stroke, ViewerCommand, ViewerEvent } from './types'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
   new Blob([workerCode], { type: 'application/javascript' }),
@@ -88,6 +88,18 @@ export default function App() {
     setPages(pageInfos)
   }, [])
 
+  const postMessage = useCallback((message: ViewerEvent) => {
+    window.ReactNativeWebView?.postMessage(JSON.stringify(message))
+  }, [])
+
+  const onAddStroke = useCallback((stroke: Stroke) => {
+    postMessage({ type: 'addStroke', data: stroke })
+  }, [])
+
+  const onRemoveStroke = useCallback((id: number) => {
+    postMessage({ type: 'removeStroke', data: id })
+  }, [])
+
   useEffect(() => {
     function handleMsg(e: MessageEvent) {
       const msg = JSON.parse(e.data) as ViewerCommand
@@ -99,7 +111,7 @@ export default function App() {
 
     document.addEventListener('message', handleMsg as EventListener)
     window.addEventListener('message', handleMsg)
-    window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'ready' }))
+    postMessage({ type: 'ready' })
 
     return () => {
       document.removeEventListener('message', handleMsg as EventListener)
@@ -136,6 +148,8 @@ export default function App() {
             pageInfo={pageInfo}
             mode={mode}
             onAction={onAction}
+            onAddStroke={onAddStroke}
+            onRemoveStroke={onRemoveStroke}
           />
         ))}
       </div>
@@ -147,9 +161,17 @@ interface PdfPageProps {
   pageInfo: PageInfo
   mode: DrawMode
   onAction: (action: Action) => void
+  onAddStroke: (stroke: Stroke) => void
+  onRemoveStroke: (id: number) => void
 }
 
-function PdfPageView({ pageInfo, mode, onAction }: PdfPageProps) {
+function PdfPageView({
+  pageInfo,
+  mode,
+  onAction,
+  onAddStroke,
+  onRemoveStroke,
+}: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -257,6 +279,7 @@ function PdfPageView({ pageInfo, mode, onAction }: PdfPageProps) {
         },
       })
       redrawPage()
+      onRemoveStroke(erased.id)
     }
 
     function onTouchStartDraw(e: TouchEvent) {
@@ -267,6 +290,7 @@ function PdfPageView({ pageInfo, mode, onAction }: PdfPageProps) {
       const x = (t.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
+        id: new Date().getTime(),
         isHighlight: m === 'highlighter',
         width: PENS[m].width,
         points: [{ x, y }],
@@ -306,12 +330,16 @@ function PdfPageView({ pageInfo, mode, onAction }: PdfPageProps) {
           const arr = annotationsRef.current
           arr.splice(arr.indexOf(stroke), 1)
           redrawPage()
+          onRemoveStroke(stroke.id)
         },
         redo: () => {
           annotationsRef.current.push(stroke)
           redrawPage()
+          onAddStroke(stroke)
         },
       })
+
+      onAddStroke(stroke)
       currentStrokeRef.current = null
     }
 
