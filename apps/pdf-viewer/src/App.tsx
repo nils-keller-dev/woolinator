@@ -2,17 +2,11 @@ import type { PageViewport, PDFPageProxy } from 'pdfjs-dist'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DrawMode, ViewerCommand } from './types'
+import { DrawMode, Stroke, ViewerCommand } from './types'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
   new Blob([workerCode], { type: 'application/javascript' }),
 )
-
-interface Stroke {
-  isHighlight: boolean
-  width: number
-  points: { x: number; y: number }[]
-}
 
 interface PageInfo {
   pdfPage: PDFPageProxy

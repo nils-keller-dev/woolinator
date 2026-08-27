@@ -1,3 +1,9 @@
+export type Stroke = {
+  isHighlight: boolean
+  width: number
+  points: { x: number; y: number }[]
+}
+
 export type DrawMode = 'scroll' | 'pen' | 'highlighter' | 'eraser'
 
 export type ViewerCommand =
@@ -6,4 +12,5 @@ export type ViewerCommand =
   | { type: 'undo' }
   | { type: 'redo' }
 
-export type ViewerEvent = { type: 'ready' }
+export type ViewerEvent =
+  { type: 'ready' } | { type: 'addStroke'; data: Stroke }
