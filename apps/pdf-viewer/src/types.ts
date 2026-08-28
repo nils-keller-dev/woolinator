@@ -12,6 +12,7 @@ export type ViewerCommand =
   | { type: 'setMode'; data: DrawMode }
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'setStrokes'; data: Stroke[] }
 
 export type ViewerEvent =
   | { type: 'ready' }

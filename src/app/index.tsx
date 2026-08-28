@@ -4,7 +4,7 @@ import { PdfControls } from '@/components/ui/pdfControls'
 import type { PdfViewerHandle } from '@/components/ui/pdfViewer'
 import { PdfViewer } from '@/components/ui/pdfViewer'
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6/static'
-import { DrawMode } from '@woolinator/pdf-viewer/types'
+import { DrawMode, Stroke } from '@woolinator/pdf-viewer/types'
 import * as DocumentPicker from 'expo-document-picker'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -32,6 +32,13 @@ export default function Index() {
   const pdfRef = useRef<PdfViewerHandle>(null)
   const [background] = useCSSVariable(['--color-background'])
 
+  const [strokes, setStrokes] = useMMKVString('strokes')
+
+  const strokesJson = strokes ? JSON.parse(strokes) : []
+  function setStrokesJson(newStrokes: Stroke[]) {
+    setStrokes(JSON.stringify(newStrokes))
+  }
+
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
       setBarStyle(colorSchemeToBarStyle(colorScheme))
@@ -51,9 +58,10 @@ export default function Index() {
       copyToCacheDirectory: true,
     })
     if (!result.canceled) {
-      remountPdfViewer()
+      setStrokes(JSON.stringify([]))
       setPdfUri(result.assets[0].uri)
       setMode('scroll')
+      remountPdfViewer()
     }
   }
 
@@ -80,7 +88,13 @@ export default function Index() {
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
           {pdfUri && pdfViewerVisible ? (
             <>
-              <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode} />
+              <PdfViewer
+                ref={pdfRef}
+                uri={pdfUri}
+                mode={mode}
+                strokes={strokesJson}
+                updateStrokes={setStrokesJson}
+              />
               <ControlButton
                 iconName="file-import"
                 onPress={pickPdf}

@@ -1,6 +1,7 @@
 import HTML from '@woolinator/pdf-viewer'
 import {
   type DrawMode,
+  type Stroke,
   type ViewerCommand,
   type ViewerEvent,
 } from '@woolinator/pdf-viewer/types'
@@ -23,10 +24,12 @@ export type PdfViewerHandle = {
 type PdfViewerProps = {
   uri: string
   mode: DrawMode
+  strokes: Stroke[]
+  updateStrokes: (strokes: Stroke[]) => void
 }
 
 const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
-  function PdfViewer({ uri, mode }, ref) {
+  function PdfViewer({ uri, mode, strokes, updateStrokes }, ref) {
     const webViewRef = useRef<WebView>(null)
     const [isReady, setIsReady] = useState(false)
 
@@ -59,7 +62,14 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
 
     async function onMessage(event: WebViewMessageEvent) {
       const msg = JSON.parse(event.nativeEvent.data) as ViewerEvent
-      if (msg.type === 'ready') setIsReady(true)
+      if (msg.type === 'ready') {
+        setIsReady(true)
+        postMessage({ type: 'setStrokes', data: strokes })
+      } else if (msg.type === 'addStroke') {
+        updateStrokes([...strokes, msg.data])
+      } else if (msg.type === 'removeStroke') {
+        updateStrokes(strokes.filter((s) => s.id !== msg.data))
+      }
     }
 
     return (
