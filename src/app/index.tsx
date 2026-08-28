@@ -20,15 +20,11 @@ import { createMMKV, useMMKVString } from 'react-native-mmkv'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useCSSVariable } from 'uniwind'
 
-const storage = createMMKV()
-
-if (!storage.getAllKeys().length) {
-  storage.set('mode', 'scroll')
-}
+createMMKV()
 
 export default function Index() {
   const [pdfUri, setPdfUri] = useMMKVString('pdfUri')
-  const [mode, setMode] = useMMKVString('mode')
+  const [mode, setMode] = useState<DrawMode>('scroll')
   const [barStyle, setBarStyle] = useState<StatusBarStyle>(
     colorSchemeToBarStyle(Appearance.getColorScheme()),
   )
