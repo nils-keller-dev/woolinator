@@ -80,7 +80,7 @@ export default function Index() {
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
           {pdfUri && pdfViewerVisible ? (
             <>
-              <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode as DrawMode} />
+              <PdfViewer ref={pdfRef} uri={pdfUri} mode={mode} />
               <ControlButton
                 iconName="file-import"
                 onPress={pickPdf}
@@ -88,7 +88,7 @@ export default function Index() {
               />
               <PdfControls
                 className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                mode={mode as DrawMode}
+                mode={mode}
                 setMode={setMode}
                 onUndo={() => pdfRef.current?.undo()}
                 onRedo={() => pdfRef.current?.redo()}
