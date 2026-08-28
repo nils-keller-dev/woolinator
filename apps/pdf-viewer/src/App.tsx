@@ -271,11 +271,13 @@ function PdfPageView({
         undo: () => {
           annotationsRef.current.push(erased)
           redrawPage()
+          onAddStroke(erased)
         },
         redo: () => {
           const arr = annotationsRef.current
           arr.splice(arr.indexOf(erased), 1)
           redrawPage()
+          onRemoveStroke(erased.id)
         },
       })
       redrawPage()
