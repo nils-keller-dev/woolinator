@@ -169,7 +169,7 @@ function PdfPageView({
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const annotationsRef = useRef<Stroke[]>([])
+  const strokesRef = useRef<Stroke[]>([])
   const currentStrokeRef = useRef<Stroke | null>(null)
   const { pdfPage, viewport, cssW, cssH } = pageInfo
 
@@ -177,7 +177,7 @@ function PdfPageView({
     const ctx = drawCanvasRef.current?.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    const strokes = [...annotationsRef.current]
+    const strokes = [...strokesRef.current]
     const live = currentStrokeRef.current
     if (live) strokes.push(live)
 
@@ -233,7 +233,7 @@ function PdfPageView({
 
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
-    annotationsRef.current = []
+    strokesRef.current = []
     const hCanvas = document.createElement('canvas')
     hCanvas.width = viewport.width
     hCanvas.height = viewport.height
@@ -252,7 +252,7 @@ function PdfPageView({
       const r = drawCanvas.getBoundingClientRect()
       const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (touch.clientY - r.top) * (drawCanvas.height / r.height)
-      const strokes = annotationsRef.current
+      const strokes = strokesRef.current
       const idx = strokes.findIndex((s) =>
         s.points.some(
           (p) =>
@@ -263,12 +263,12 @@ function PdfPageView({
       const [erased] = strokes.splice(idx, 1)
       onAction({
         undo: () => {
-          annotationsRef.current.push(erased)
+          strokesRef.current.push(erased)
           redrawPage()
           onAddStroke(erased)
         },
         redo: () => {
-          const arr = annotationsRef.current
+          const arr = strokesRef.current
           arr.splice(arr.indexOf(erased), 1)
           redrawPage()
           onRemoveStroke(erased.id)
@@ -320,16 +320,16 @@ function PdfPageView({
     function onTouchEnd() {
       const stroke = currentStrokeRef.current
       if (!stroke) return
-      annotationsRef.current.push(stroke)
+      strokesRef.current.push(stroke)
       onAction({
         undo: () => {
-          const arr = annotationsRef.current
+          const arr = strokesRef.current
           arr.splice(arr.indexOf(stroke), 1)
           redrawPage()
           onRemoveStroke(stroke.id)
         },
         redo: () => {
-          annotationsRef.current.push(stroke)
+          strokesRef.current.push(stroke)
           redrawPage()
           onAddStroke(stroke)
         },
