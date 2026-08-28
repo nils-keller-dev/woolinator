@@ -17,12 +17,6 @@ interface PageInfo {
 
 type Action = { undo: () => void; redo: () => void }
 
-declare global {
-  interface Window {
-    ReactNativeWebView?: { postMessage: (msg: string) => void }
-  }
-}
-
 const DPR = window.devicePixelRatio || 1
 const RESOLUTION = 3
 
