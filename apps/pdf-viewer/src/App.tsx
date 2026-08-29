@@ -186,7 +186,7 @@ function PdfPageView({
       const hCtx = hCanvas.getContext('2d')!
       hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height)
       const highlights = strokes.filter(
-        (s) => s.isHighlight && s.points.length >= 2,
+        (s) => s.tool === 'highlighter' && s.points.length >= 2,
       )
       if (highlights.length) {
         hCtx.lineCap = 'round'
@@ -206,7 +206,7 @@ function PdfPageView({
       }
     }
 
-    const pens = strokes.filter((s) => !s.isHighlight && s.points.length >= 2)
+    const pens = strokes.filter((s) => s.tool === 'pen' && s.points.length >= 2)
     if (pens.length) {
       ctx.save()
       ctx.lineCap = 'round'
@@ -287,9 +287,9 @@ function PdfPageView({
       const y = (t.clientY - r.top) * (drawCanvas.height / r.height)
       currentStrokeRef.current = {
         id: new Date().getTime(),
-        isHighlight: m === 'highlighter',
-        width: PENS[m].width,
+        tool: m,
         points: [{ x, y }],
+        page: pdfPage.pageNumber,
       }
     }
 

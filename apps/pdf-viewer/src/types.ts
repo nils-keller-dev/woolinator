@@ -1,8 +1,8 @@
 export type Stroke = {
   id: number
-  isHighlight: boolean
-  width: number
+  tool: 'pen' | 'highlighter'
   points: { x: number; y: number }[]
+  page: number
 }
 
 export type DrawMode = 'scroll' | 'pen' | 'highlighter' | 'eraser'
