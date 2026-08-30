@@ -58,6 +58,7 @@
     "preandroid": "npm run build:pdf",
     "start": "npm run build:pdf:watch & expo start",
     "android": "expo run:android",
+    "android:release": "npx expo run:android --variant release",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
