@@ -11,10 +11,17 @@ interface CounterProps {
   min?: number
   max?: number
   title: string
+  onChangeTitle: (title: string) => void
   id: string
 }
 
-export function Counter({ min = 0, max = 999, title, id }: CounterProps) {
+export function Counter({
+  min = 0,
+  max = 999,
+  title,
+  onChangeTitle,
+  id,
+}: CounterProps) {
   const [inputValue, setInputValue] = useMMKVString(`counter-${id}`)
   const foreground = useCSSVariable('--color-foreground') as string
 
@@ -36,8 +43,12 @@ export function Counter({ min = 0, max = 999, title, id }: CounterProps) {
 
   return (
     <View className="w-full gap-2.5">
-      <View className="w-full flex-row items-center justify-between">
-        <Text className="text-foreground text-xl">{title}</Text>
+      <View className="w-full flex-row items-center justify-between gap-14">
+        <TextInput
+          className="text-foreground h-7 flex-1 p-0 text-xl leading-7"
+          value={title}
+          onChangeText={onChangeTitle}
+        />
         <Button onPress={() => update(min)}>
           <Text>Reset</Text>
         </Button>
@@ -55,7 +66,7 @@ export function Counter({ min = 0, max = 999, title, id }: CounterProps) {
           />
         </CounterButton>
         <TextInput
-          className="text-foreground absolute left-1/2 flex-1 -translate-x-1/2 text-center text-[80px] tabular-nums"
+          className="text-foreground flex-1 p-0 text-center text-[80px] leading-18 tabular-nums"
           value={inputValue}
           onChangeText={handleInputChange}
           onBlur={handleInputBlur}

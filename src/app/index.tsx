@@ -20,10 +20,16 @@ import { createMMKV, useMMKVString } from 'react-native-mmkv'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useCSSVariable } from 'uniwind'
 
-createMMKV()
+const storage = createMMKV()
+
+if (!storage.getString('titles')) {
+  storage.set('titles', JSON.stringify(['Reihen / Runden', 'Maschen']))
+}
 
 export default function Index() {
   const [pdfUri, setPdfUri] = useMMKVString('pdfUri')
+  const [titles, setTitles] = useMMKVString('titles')
+  const [strokes, setStrokes] = useMMKVString('strokes')
   const [mode, setMode] = useState<DrawMode>('scroll')
   const [barStyle, setBarStyle] = useState<StatusBarStyle>(
     colorSchemeToBarStyle(Appearance.getColorScheme()),
@@ -32,9 +38,9 @@ export default function Index() {
   const pdfRef = useRef<PdfViewerHandle>(null)
   const [background] = useCSSVariable(['--color-background'])
 
-  const [strokes, setStrokes] = useMMKVString('strokes')
-
+  const titlesArray = JSON.parse(titles ?? '[]')
   const strokesJson = strokes ? JSON.parse(strokes) : []
+
   function setStrokesJson(newStrokes: Stroke[]) {
     setStrokes(JSON.stringify(newStrokes))
   }
@@ -70,6 +76,12 @@ export default function Index() {
     setTimeout(() => setPdfViewerVisible(true), 0)
   }
 
+  function handleChangeTitle(index: number, title: string) {
+    const newTitles = [...titlesArray]
+    newTitles[index] = title
+    setTitles(JSON.stringify(newTitles))
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView
@@ -82,8 +94,16 @@ export default function Index() {
       >
         <StatusBar barStyle={barStyle} />
         <View className="flex w-full gap-5">
-          <Counter title="Reihen / Runden" id="rows-rounds" />
-          <Counter title="Maschen" id="stitches" />
+          <Counter
+            title={titlesArray[0]}
+            id="rows-rounds"
+            onChangeTitle={(newTitle) => handleChangeTitle(0, newTitle)}
+          />
+          <Counter
+            title={titlesArray[1]}
+            id="stitches"
+            onChangeTitle={(newTitle) => handleChangeTitle(1, newTitle)}
+          />
         </View>
         <View className="relative w-full flex-1 overflow-hidden rounded-xl bg-[#eee]">
           {pdfUri && pdfViewerVisible ? (
