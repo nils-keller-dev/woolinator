@@ -3,6 +3,7 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DrawMode, Stroke, ViewerCommand, ViewerEvent } from './types'
+import { distToSegment } from './utils'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
   new Blob([workerCode], { type: 'application/javascript' }),
@@ -261,10 +262,19 @@ function PdfPageView({
       const x = (touch.clientX - r.left) * (drawCanvas.width / r.width)
       const y = (touch.clientY - r.top) * (drawCanvas.height / r.height)
       const strokes = strokesRef.current
+      const threshold = PENS.eraser.width * DPR * RESOLUTION
       const idx = strokes.findIndex((s) =>
-        s.points.some(
-          (p) =>
-            Math.hypot(p.x - x, p.y - y) < PENS.eraser.width * DPR * RESOLUTION,
+        s.points.some((p, i) =>
+          i === 0
+            ? Math.hypot(p.x - x, p.y - y) < threshold
+            : distToSegment(
+                x,
+                y,
+                s.points[i - 1].x,
+                s.points[i - 1].y,
+                p.x,
+                p.y,
+              ) < threshold,
         ),
       )
       if (idx === -1) return
