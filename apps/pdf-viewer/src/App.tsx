@@ -37,6 +37,7 @@ const PENS = {
 export default function App() {
   const [pages, setPages] = useState<PageInfo[]>([])
   const [mode, setMode] = useState<DrawMode>('scroll')
+  const [strokes, setStrokes] = useState<Stroke[]>([])
   const undoRedoRef = useRef<{ history: Action[]; redo: Action[] }>({
     history: [],
     redo: [],
@@ -101,6 +102,7 @@ export default function App() {
       else if (msg.type === 'setMode') setMode(msg.data)
       else if (msg.type === 'undo') undo()
       else if (msg.type === 'redo') redo()
+      else if (msg.type === 'setStrokes') setStrokes(msg.data)
     }
 
     document.addEventListener('message', handleMsg as EventListener)
@@ -111,7 +113,7 @@ export default function App() {
       document.removeEventListener('message', handleMsg as EventListener)
       window.removeEventListener('message', handleMsg)
     }
-  }, [loadPdf, setMode, undo, redo])
+  }, [loadPdf, setMode, undo, redo, setStrokes, postMessage])
 
   return (
     <div
@@ -144,6 +146,9 @@ export default function App() {
             onAction={onAction}
             onAddStroke={onAddStroke}
             onRemoveStroke={onRemoveStroke}
+            initialStrokes={strokes.filter(
+              (s) => s.page === pageInfo.pdfPage.pageNumber,
+            )}
           />
         ))}
       </div>
@@ -157,6 +162,7 @@ interface PdfPageProps {
   onAction: (action: Action) => void
   onAddStroke: (stroke: Stroke) => void
   onRemoveStroke: (id: number) => void
+  initialStrokes: Stroke[]
 }
 
 function PdfPageView({
@@ -165,11 +171,12 @@ function PdfPageView({
   onAction,
   onAddStroke,
   onRemoveStroke,
+  initialStrokes,
 }: PdfPageProps) {
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const hCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const strokesRef = useRef<Stroke[]>([])
+  const strokesRef = useRef<Stroke[]>(initialStrokes)
   const currentStrokeRef = useRef<Stroke | null>(null)
   const { pdfPage, viewport, cssW, cssH } = pageInfo
 
@@ -233,11 +240,12 @@ function PdfPageView({
 
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
-    strokesRef.current = []
     const hCanvas = document.createElement('canvas')
     hCanvas.width = viewport.width
     hCanvas.height = viewport.height
     hCanvasRef.current = hCanvas
+
+    redrawPage()
   }, [])
 
   useEffect(() => {
