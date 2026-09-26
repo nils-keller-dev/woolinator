@@ -63,12 +63,8 @@ export default function App() {
     undoRedoRef.current.history.push(action)
   }, [])
 
-  const loadPdf = useCallback(async (base64: string) => {
-    const binary = atob(base64)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-
-    const pdf = await getDocument({ data: bytes }).promise
+  const loadPdf = useCallback(async (url: string) => {
+    const pdf = await getDocument({ url }).promise
     const pageInfos: PageInfo[] = []
 
     for (let i = 1; i <= pdf.numPages; i++) {

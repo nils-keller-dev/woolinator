@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import RNBlobUtil from 'react-native-blob-util'
 import type { WebViewMessageEvent } from 'react-native-webview'
 import WebView from 'react-native-webview'
 
@@ -49,16 +48,8 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
 
     useEffect(() => {
       if (!isReady) return
-      loadPdf(uri)
+      postMessage({ type: 'loadPdf', data: uri })
     }, [uri, isReady])
-
-    async function loadPdf(pdfUri: string) {
-      const base64 = (await RNBlobUtil.fs.readFile(
-        pdfUri.slice(7),
-        'base64',
-      )) as string
-      postMessage({ type: 'loadPdf', data: base64 })
-    }
 
     async function onMessage(event: WebViewMessageEvent) {
       const msg = JSON.parse(event.nativeEvent.data) as ViewerEvent
@@ -75,10 +66,12 @@ const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
     return (
       <WebView
         ref={webViewRef}
-        source={{ html: HTML }}
+        source={{ html: HTML, baseUrl: 'file:///' }}
         onMessage={onMessage}
         originWhitelist={['*']}
         javaScriptEnabled
+        allowFileAccess
+        allowFileAccessFromFileURLs
       />
     )
   },
