@@ -1,12 +1,12 @@
 import type { PageViewport, PDFPageProxy } from 'pdfjs-dist'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
-import workerCode from 'pdfjs-dist/build/pdf.worker.min.js?raw'
+import workerCode from 'pdfjs-dist/build/pdf.worker.min.mjs?raw'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DrawMode, Stroke, ViewerCommand, ViewerEvent } from './types'
 import { distToSegment } from './utils'
 
 GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-  new Blob([workerCode], { type: 'application/javascript' }),
+  new Blob([workerCode], { type: 'text/javascript' }),
 )
 
 interface PageInfo {
@@ -233,7 +233,7 @@ function PdfPageView({
 
     pdfCanvas.width = viewport.width
     pdfCanvas.height = viewport.height
-    pdfPage.render({ canvasContext: pdfCanvas.getContext('2d')!, viewport })
+    pdfPage.render({ canvas: pdfCanvas, viewport })
 
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height

@@ -12,7 +12,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "pdfjs-dist": "3.11.174",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
